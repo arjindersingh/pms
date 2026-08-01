@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureMenuPermission;
+use App\Http\Middleware\EnsureModuleAccess;
+use App\Http\Middleware\EnsureUserCategory;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,7 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'category' => EnsureUserCategory::class,
+            'module' => EnsureModuleAccess::class,
+            'menu' => EnsureMenuPermission::class,
+        ]);
+
+        $middleware->redirectGuestsTo(
+            fn (Request $request) => $request->is('admin/*') ? route('administrator.login') : route('login'),
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

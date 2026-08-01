@@ -1,0 +1,1 @@
+<footer class="portal-footer"><span>© {{ date('Y') }} PlaceFlow</span><span class="footer-center"><i class="bi bi-circle-fill"></i> All systems operational</span><nav><a href="#">Help</a><a href="#">Privacy</a><a href="#">Terms</a></nav></footer>
