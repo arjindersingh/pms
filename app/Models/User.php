@@ -8,8 +8,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -27,10 +27,25 @@ class User extends Authenticatable
         return $this->belongsTo(UserType::class);
     }
 
-    public function role(): BelongsTo { return $this->belongsTo(UserRole::class, 'user_role_id'); }
-    public function permittedModules() { return $this->belongsToMany(PortalModule::class, 'portal_module_user')->withPivot('enabled')->withTimestamps(); }
-    public function permittedMenus() { return $this->belongsToMany(PortalMenu::class, 'portal_menu_user')->withPivot(['can_view','can_create','can_update','can_delete'])->withTimestamps(); }
-    public function isSuperAdmin(): bool { return (bool) $this->role?->is_super_admin; }
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(UserRole::class, 'user_role_id');
+    }
+
+    public function permittedModules()
+    {
+        return $this->belongsToMany(PortalModule::class, 'portal_module_user')->withPivot('enabled')->withTimestamps();
+    }
+
+    public function permittedMenus()
+    {
+        return $this->belongsToMany(PortalMenu::class, 'portal_menu_user')->withPivot(['can_view', 'can_create', 'can_update', 'can_delete'])->withTimestamps();
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->role?->is_super_admin;
+    }
 
     public function errorSetting(): HasOne
     {

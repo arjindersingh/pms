@@ -36,3 +36,19 @@ Alpine.data('portalShell', () => ({
 }));
 
 Livewire.start();
+
+document.querySelectorAll('.searchable-select').forEach(select => {
+    if (select.dataset.enhanced) return;
+    select.dataset.enhanced = 'true';
+    const search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'form-control form-control-sm searchable-select-input';
+    search.placeholder = select.dataset.placeholder || 'Search options';
+    search.setAttribute('aria-label', search.placeholder);
+    select.before(search);
+    search.addEventListener('input', () => {
+        const query = search.value.trim().toLowerCase();
+        Array.from(select.options).forEach((option, index) => option.hidden = index > 0 && query !== '' && !option.text.toLowerCase().includes(query));
+        if (query && select.options[select.selectedIndex]?.hidden) select.value = '';
+    });
+});

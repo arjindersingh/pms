@@ -46,7 +46,9 @@ class UserSessionHistory extends Model
 
     public function statusLabel(): string
     {
-        if ($this->logged_out_at) return 'Logged out';
+        if ($this->logged_out_at) {
+            return 'Logged out';
+        }
 
         return $this->isActive() ? 'Active' : 'Expired';
     }
@@ -55,8 +57,12 @@ class UserSessionHistory extends Model
     {
         $seconds = $this->duration_seconds ?: $this->logged_in_at->diffInSeconds($this->logged_out_at ?? $this->last_seen_at);
 
-        if ($seconds < 60) return $seconds.' sec';
-        if ($seconds < 3600) return intdiv($seconds, 60).' min';
+        if ($seconds < 60) {
+            return $seconds.' sec';
+        }
+        if ($seconds < 3600) {
+            return intdiv($seconds, 60).' min';
+        }
 
         return intdiv($seconds, 3600).' hr '.intdiv($seconds % 3600, 60).' min';
     }

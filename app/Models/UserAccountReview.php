@@ -14,6 +14,13 @@ class UserAccountReview extends Model
         return ['metadata' => 'array'];
     }
 
-    public function user(): BelongsTo { return $this->belongsTo(User::class)->withTrashed(); }
-    public function reviewer(): BelongsTo { return $this->belongsTo(User::class, 'reviewed_by')->withTrashed(); }
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class)->withTrashed();
+    }
+
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by')->withTrashed();
+    }
 }

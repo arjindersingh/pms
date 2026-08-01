@@ -4,15 +4,24 @@ namespace Database\Seeders;
 
 use App\Enums\UserCategory;
 use App\Models\AcademicClass;
+use App\Models\Country;
+use App\Models\District;
+use App\Models\EmploymentType;
 use App\Models\Gender;
+use App\Models\Language;
 use App\Models\MaritalStatus;
 use App\Models\PortalMenu;
 use App\Models\PortalModule;
+use App\Models\ProficiencyLevel;
 use App\Models\QualificationLevel;
 use App\Models\SharedMaster;
+use App\Models\Skill;
+use App\Models\State;
+use App\Models\StudyMode;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Models\UserType;
+use App\Models\WorkMode;
 use App\Services\RolePermissionService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -130,6 +139,27 @@ class DatabaseSeeder extends Seeder
         $this->masterRecords(Gender::class, [['MALE', 'Male'], ['FEMALE', 'Female'], ['NON_BINARY', 'Non-binary'], ['UNDISCLOSED', 'Prefer not to disclose']]);
         $this->masterRecords(MaritalStatus::class, [['SINGLE', 'Single'], ['MARRIED', 'Married'], ['DIVORCED', 'Divorced'], ['WIDOWED', 'Widowed']]);
         $this->masterRecords(AcademicClass::class, [['CLASS_8', 'Class 8'], ['CLASS_10', 'Class 10'], ['CLASS_12', 'Class 12']]);
+        $this->masterRecords(Country::class, [['IN', 'India'], ['US', 'United States'], ['GB', 'United Kingdom'], ['CA', 'Canada'], ['AU', 'Australia'], ['NZ', 'New Zealand'], ['AE', 'United Arab Emirates'], ['SG', 'Singapore'], ['DE', 'Germany'], ['FR', 'France'], ['IE', 'Ireland'], ['JP', 'Japan'], ['CN', 'China'], ['BD', 'Bangladesh'], ['BT', 'Bhutan'], ['NP', 'Nepal'], ['LK', 'Sri Lanka'], ['PK', 'Pakistan'], ['ZA', 'South Africa'], ['SA', 'Saudi Arabia'], ['QA', 'Qatar'], ['OM', 'Oman'], ['KW', 'Kuwait'], ['MY', 'Malaysia'], ['ID', 'Indonesia']]);
+        $this->masterRecords(Language::class, [['EN', 'English'], ['HI', 'Hindi'], ['PA', 'Punjabi'], ['BN', 'Bengali'], ['MR', 'Marathi'], ['TE', 'Telugu'], ['TA', 'Tamil'], ['GU', 'Gujarati'], ['UR', 'Urdu'], ['KN', 'Kannada'], ['ML', 'Malayalam'], ['OR', 'Odia'], ['AS', 'Assamese']]);
+        $this->masterRecords(StudyMode::class, [['REGULAR', 'Regular'], ['DISTANCE', 'Distance'], ['ONLINE', 'Online'], ['PART_TIME', 'Part-time']]);
+        $this->masterRecords(EmploymentType::class, [['FULL_TIME', 'Full-time'], ['PART_TIME', 'Part-time'], ['PERMANENT', 'Permanent'], ['CONTRACT', 'Contract'], ['INTERNSHIP', 'Internship'], ['APPRENTICE', 'Apprenticeship'], ['TEMPORARY', 'Temporary'], ['FREELANCE', 'Freelance'], ['CONSULTANCY', 'Consultancy']]);
+        $this->masterRecords(WorkMode::class, [['ONSITE', 'On-site'], ['REMOTE', 'Remote'], ['HYBRID', 'Hybrid'], ['FIELD', 'Field-based']]);
+        $this->masterRecords(ProficiencyLevel::class, [['BASIC', 'Basic'], ['CONVERSATIONAL', 'Conversational'], ['WORKING', 'Working proficiency'], ['PROFESSIONAL', 'Professional proficiency'], ['FLUENT', 'Fluent'], ['NATIVE', 'Native / Bilingual']]);
+        $this->masterRecords(Skill::class, [['COMMUNICATION', 'Communication'], ['LEADERSHIP', 'Leadership'], ['TEAMWORK', 'Teamwork'], ['MS_OFFICE', 'Microsoft Office'], ['EXCEL', 'Microsoft Excel'], ['PHP', 'PHP'], ['LARAVEL', 'Laravel'], ['JAVASCRIPT', 'JavaScript'], ['PYTHON', 'Python'], ['SQL', 'SQL'], ['MARKETING', 'Marketing'], ['SALES', 'Sales'], ['ACCOUNTING', 'Accounting'], ['TEACHING', 'Teaching']]);
+        $this->seedIndianGeography();
+    }
+
+    private function seedIndianGeography(): void
+    {
+        $india = Country::where('code', 'IN')->firstOrFail();
+        $states = [['AN', 'Andaman and Nicobar Islands'], ['AP', 'Andhra Pradesh'], ['AR', 'Arunachal Pradesh'], ['AS', 'Assam'], ['BR', 'Bihar'], ['CH', 'Chandigarh'], ['CG', 'Chhattisgarh'], ['DH', 'Dadra and Nagar Haveli and Daman and Diu'], ['DL', 'Delhi'], ['GA', 'Goa'], ['GJ', 'Gujarat'], ['HR', 'Haryana'], ['HP', 'Himachal Pradesh'], ['JK', 'Jammu and Kashmir'], ['JH', 'Jharkhand'], ['KA', 'Karnataka'], ['KL', 'Kerala'], ['LA', 'Ladakh'], ['LD', 'Lakshadweep'], ['MP', 'Madhya Pradesh'], ['MH', 'Maharashtra'], ['MN', 'Manipur'], ['ML', 'Meghalaya'], ['MZ', 'Mizoram'], ['NL', 'Nagaland'], ['OD', 'Odisha'], ['PY', 'Puducherry'], ['PB', 'Punjab'], ['RJ', 'Rajasthan'], ['SK', 'Sikkim'], ['TN', 'Tamil Nadu'], ['TS', 'Telangana'], ['TR', 'Tripura'], ['UP', 'Uttar Pradesh'], ['UK', 'Uttarakhand'], ['WB', 'West Bengal']];
+        foreach ($states as $i => [$code,$name]) {
+            State::updateOrCreate(['country_id' => $india->id, 'code' => $code], ['display_name' => $name, 'short_name' => $name, 'sort_order' => ($i + 1) * 10, 'is_active' => true]);
+        }
+        $punjab = State::where('country_id', $india->id)->where('code', 'PB')->firstOrFail();
+        foreach (['Amritsar', 'Barnala', 'Bathinda', 'Faridkot', 'Fatehgarh Sahib', 'Fazilka', 'Ferozepur', 'Gurdaspur', 'Hoshiarpur', 'Jalandhar', 'Kapurthala', 'Ludhiana', 'Malerkotla', 'Mansa', 'Moga', 'Pathankot', 'Patiala', 'Rupnagar', 'Sahibzada Ajit Singh Nagar', 'Sangrur', 'Shaheed Bhagat Singh Nagar', 'Sri Muktsar Sahib', 'Tarn Taran'] as $i => $name) {
+            District::updateOrCreate(['state_id' => $punjab->id, 'code' => strtoupper(str_replace(' ', '_', $name))], ['display_name' => $name, 'short_name' => $name, 'sort_order' => ($i + 1) * 10, 'is_active' => true]);
+        }
     }
 
     /** @param class-string<SharedMaster> $model */
