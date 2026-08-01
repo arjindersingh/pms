@@ -1,11 +1,12 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AccountReviewController;
 use App\Http\Controllers\Admin\AdSettingController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SessionReportController;
+use App\Http\Controllers\Admin\SharedMasterController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RegistrationController;
@@ -58,6 +59,10 @@ Route::middleware(['auth', 'category:administrator', 'module:administration'])->
     Route::put('/google-ads', [AdSettingController::class, 'update'])->middleware('menu:google-ads,update')->name('ads.update');
     Route::get('/sessions', [SessionReportController::class, 'index'])->middleware('menu:session-reports,view')->name('sessions.index');
     Route::get('/sessions/{session}', [SessionReportController::class, 'show'])->middleware('menu:session-reports,view')->name('sessions.show');
+    Route::get('/shared-masters', [SharedMasterController::class, 'index'])->middleware('menu:shared-masters,view')->name('shared-masters.index');
+    Route::post('/shared-masters/{type}', [SharedMasterController::class, 'store'])->middleware('menu:shared-masters,create')->name('shared-masters.store');
+    Route::put('/shared-masters/{type}/{record}', [SharedMasterController::class, 'update'])->middleware('menu:shared-masters,update')->name('shared-masters.update');
+    Route::delete('/shared-masters/{type}/{record}', [SharedMasterController::class, 'destroy'])->middleware('menu:shared-masters,delete')->name('shared-masters.destroy');
 });
 
 Route::middleware(['auth', 'category:recruiter', 'module:recruitment'])->prefix('recruiter')->name('recruiter.')->group(function () {

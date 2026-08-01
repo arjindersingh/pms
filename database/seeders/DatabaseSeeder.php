@@ -3,11 +3,16 @@
 namespace Database\Seeders;
 
 use App\Enums\UserCategory;
+use App\Models\AcademicClass;
+use App\Models\Gender;
+use App\Models\MaritalStatus;
 use App\Models\PortalMenu;
 use App\Models\PortalModule;
+use App\Models\QualificationLevel;
+use App\Models\SharedMaster;
 use App\Models\User;
-use App\Models\UserType;
 use App\Models\UserRole;
+use App\Models\UserType;
 use App\Services\RolePermissionService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -35,9 +40,10 @@ class DatabaseSeeder extends Seeder
         $accessControl = $this->menu($administration, 'Access Control', 'access-control', null, 'bi-shield-lock', 20);
         $userManagement = $this->menu($administration, 'User Management', 'user-management', null, 'bi-people', 10, $accessControl);
         $permissionSetup = $this->menu($administration, 'Permission Setup', 'permission-setup', null, 'bi-sliders', 20, $accessControl);
-        $monetization = $this->menu($administration, 'Monetization', 'monetization', null, 'bi-cash-coin', 30);
+        $sharedData = $this->menu($administration, 'Shared Data', 'shared-data', null, 'bi-database', 30);
+        $monetization = $this->menu($administration, 'Monetization', 'monetization', null, 'bi-cash-coin', 40);
         $adminMenus = [
-            $adminDashboard, $accessControl, $userManagement, $permissionSetup, $monetization,
+            $adminDashboard, $accessControl, $userManagement, $permissionSetup, $sharedData, $monetization,
             $this->menu($administration, 'Account Review', 'account-review', 'admin.accounts.index', 'bi-person-check', 30, $accessControl),
             $this->menu($administration, 'Roles & Permissions', 'role-management', 'admin.roles.index', 'bi-person-gear', 40, $accessControl),
             $this->menu($administration, 'Permission Audit', 'permission-audit', 'admin.permission-audit', 'bi-clock-history', 50, $accessControl),
@@ -46,6 +52,7 @@ class DatabaseSeeder extends Seeder
             $this->menu($administration, 'Session Reports', 'session-reports', 'admin.sessions.index', 'bi-pc-display-horizontal', 30, $userManagement),
             $this->menu($administration, 'Module Access', 'module-access', 'admin.access', 'bi-grid', 10, $permissionSetup),
             $this->menu($administration, 'Menu Permissions', 'menu-permissions', 'admin.access', 'bi-list-check', 20, $permissionSetup),
+            $this->menu($administration, 'Shared Masters', 'shared-masters', 'admin.shared-masters.index', 'bi-collection', 10, $sharedData),
             $this->menu($administration, 'Google Ads', 'google-ads', 'admin.ads.edit', 'bi-badge-ad', 10, $monetization),
         ];
 
@@ -97,6 +104,28 @@ class DatabaseSeeder extends Seeder
         $assign->assign($this->user('Agency Recruiter', 'agency@example.com', $staffingAgency), $recruiterMember, null, false);
         $assign->assign($this->user('Demo Talent', 'talent@example.com', $graduate), $candidate, null, false);
         $assign->assign($this->user('Experienced Candidate', 'candidate@example.com', $experienced), $candidateViewer, null, false);
+
+        $this->seedSharedMasters();
+    }
+
+    private function seedSharedMasters(): void
+    {
+        $this->masterRecords(QualificationLevel::class, [
+            ['SEC', 'Secondary'], ['SR_SEC', 'Senior Secondary'], ['CERT', 'Certificate'], ['ITI', 'ITI / Vocational'],
+            ['DIP', 'Diploma'], ['ADV_DIP', 'Advanced Diploma'], ['UG', 'Graduation / Bachelor’s'], ['PG_DIP', 'Postgraduate Diploma'],
+            ['PG', 'Postgraduation / Master’s'], ['MPHIL', 'M.Phil.'], ['DOC', 'Doctorate / Ph.D.'], ['POST_DOC', 'Postdoctoral Research'], ['OTHER', 'Other Qualification'],
+        ]);
+        $this->masterRecords(Gender::class, [['MALE', 'Male'], ['FEMALE', 'Female'], ['NON_BINARY', 'Non-binary'], ['UNDISCLOSED', 'Prefer not to disclose']]);
+        $this->masterRecords(MaritalStatus::class, [['SINGLE', 'Single'], ['MARRIED', 'Married'], ['DIVORCED', 'Divorced'], ['WIDOWED', 'Widowed']]);
+        $this->masterRecords(AcademicClass::class, [['CLASS_8', 'Class 8'], ['CLASS_10', 'Class 10'], ['CLASS_12', 'Class 12']]);
+    }
+
+    /** @param class-string<SharedMaster> $model */
+    private function masterRecords(string $model, array $records): void
+    {
+        foreach ($records as $position => [$code, $name]) {
+            $model::withTrashed()->updateOrCreate(['code' => $code], ['short_name' => $name, 'display_name' => $name, 'sort_order' => ($position + 1) * 10, 'is_active' => true, 'deleted_at' => null]);
+        }
     }
 
     private function type(UserCategory $category, string $name, string $slug, ?UserType $parent = null): UserType
@@ -149,7 +178,9 @@ class DatabaseSeeder extends Seeder
     private function roleTemplate(UserRole $role, PortalModule $module, array $menus, bool $manage): void
     {
         $role->modules()->syncWithoutDetaching([$module->id => ['enabled' => true]]);
-        foreach ($menus as $menu) $role->menus()->syncWithoutDetaching([$menu->id => ['can_view' => true, 'can_create' => $manage, 'can_update' => $manage, 'can_delete' => $manage]]);
+        foreach ($menus as $menu) {
+            $role->menus()->syncWithoutDetaching([$menu->id => ['can_view' => true, 'can_create' => $manage, 'can_update' => $manage, 'can_delete' => $manage]]);
+        }
     }
 
     private function user(string $name, string $email, UserType $type): User
