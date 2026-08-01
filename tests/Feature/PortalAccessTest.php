@@ -22,6 +22,20 @@ class PortalAccessTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
+    public function test_home_page_links_the_compiled_bootstrap_assets(): void
+    {
+        $response = $this->get(route('home'))->assertOk();
+
+        $response->assertSee('href="/build/assets/app-', false);
+        $response->assertSee('src="/build/assets/app-', false);
+
+        $manifest = json_decode(file_get_contents(public_path('build/manifest.json')), true);
+        $compiledCss = public_path('build/'.$manifest['resources/css/app.css']['file']);
+
+        $this->assertFileExists($compiledCss);
+        $this->assertStringContainsString('.btn-primary', file_get_contents($compiledCss));
+    }
+
     public function test_login_redirects_each_category_to_its_own_dashboard(): void
     {
         foreach ([
