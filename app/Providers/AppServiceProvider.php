@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,6 +21,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($vercelUrl = env('VERCEL_URL')) {
+            URL::forceRootUrl('https://'.$vercelUrl);
+            URL::forceScheme('https');
+        }
+
         $this->ignoreStaleViteHotFile();
 
         // Root-relative build URLs work behind forwarded ports, HTTPS proxies,

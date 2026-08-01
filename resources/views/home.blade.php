@@ -8,6 +8,9 @@
     @livewireStyles
     @livewireScriptConfig
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if($ads->shouldLoadScript())
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ $ads->publisher_id }}" crossorigin="anonymous"></script>
+    @endif
 </head>
 <body class="landing-page">
     <nav class="navbar navbar-expand-lg landing-nav fixed-top" x-data="{ scrolled: false }" @scroll.window="scrolled = window.scrollY > 24" :class="scrolled && 'is-scrolled'">
@@ -80,6 +83,8 @@
             </div>
         </section>
 
+        <div class="container home-ad-wrap"><x-ad-slot :ads="$ads" placement="homepage_top" label="Top banner" /></div>
+
         <section class="logo-strip py-4"><div class="container"><div class="d-flex flex-wrap justify-content-center align-items-center gap-4 gap-lg-5 text-secondary"><span class="small text-uppercase fw-semibold tracking-wide">Built for every journey</span><span><i class="bi bi-buildings me-2"></i>Growing teams</span><span><i class="bi bi-mortarboard me-2"></i>New graduates</span><span><i class="bi bi-lightning-charge me-2"></i>Career movers</span><span><i class="bi bi-globe2 me-2"></i>Modern workplaces</span></div></div></section>
 
         <section class="section-space" id="how-it-works">
@@ -93,6 +98,8 @@
             </div>
         </section>
 
+        <div class="container home-ad-wrap"><x-ad-slot :ads="$ads" placement="homepage_middle" label="Content break" /></div>
+
         <section class="section-space possibilities-section" id="possibilities">
             <div class="container">
                 <div class="row g-4">
@@ -101,6 +108,8 @@
                 </div>
             </div>
         </section>
+
+        <div class="container home-ad-wrap"><x-ad-slot :ads="$ads" placement="homepage_bottom" label="Bottom banner" /></div>
 
         <section class="section-space community-section" id="community">
             <div class="container text-center position-relative"><div class="community-orb"></div><span class="eyebrow text-warning">THE NEXT CHAPTER STARTS HERE</span><h2 class="display-4 fw-bold text-white mx-auto mt-3">Ready to find where you belong?</h2><p class="lead text-white-50 mx-auto mt-3">Join a placement community built around potential, progress, and possibility.</p><div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-5"><a class="btn btn-light btn-lg px-4" href="{{ route('register.talent') }}">I’m looking for work</a><a class="btn btn-outline-light btn-lg px-4" href="{{ route('register.recruiter') }}">I’m looking for talent</a></div></div>
