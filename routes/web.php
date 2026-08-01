@@ -10,6 +10,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\Talent\CandidateProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
@@ -73,4 +74,11 @@ Route::middleware(['auth', 'category:recruiter', 'module:recruitment'])->prefix(
 Route::middleware(['auth', 'category:talent', 'module:career'])->prefix('talent')->name('talent.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'talent'])
         ->middleware('menu:talent-dashboard,view')->name('dashboard');
+    Route::get('/profile/{tab?}', [CandidateProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile/{tab}', [CandidateProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/entries/education', [CandidateProfileController::class, 'education'])->name('profile.education');
+    Route::post('/profile/entries/experience', [CandidateProfileController::class, 'experience'])->name('profile.experience');
+    Route::post('/profile/entries/skill', [CandidateProfileController::class, 'skill'])->name('profile.skill');
+    Route::post('/profile/entries/language', [CandidateProfileController::class, 'language'])->name('profile.language');
+    Route::delete('/profile/entries/{collection}/{record}', [CandidateProfileController::class, 'remove'])->name('profile.remove');
 });

@@ -37,6 +37,11 @@ class User extends Authenticatable
         return $this->hasOne(UserErrorSetting::class);
     }
 
+    public function candidateProfile(): HasOne
+    {
+        return $this->hasOne(CandidateProfile::class);
+    }
+
     public function accountReviews(): HasMany
     {
         return $this->hasMany(UserAccountReview::class)->latest();

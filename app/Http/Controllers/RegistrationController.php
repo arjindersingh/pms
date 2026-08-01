@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\UserCategory;
 use App\Models\User;
-use App\Models\UserType;
 use App\Models\UserRole;
+use App\Models\UserType;
 use App\Services\RolePermissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -68,7 +68,7 @@ class RegistrationController extends Controller
         ]));
 
         $defaultRoleSlug = match ($category) {
-            UserCategory::Recruiter => 'recruiter-member',
+            UserCategory::Recruiter => 'recruiter',
             UserCategory::Talent => 'candidate',
             default => null,
         };

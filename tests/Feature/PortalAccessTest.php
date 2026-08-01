@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Livewire\Admin\AccessMatrix;
+use App\Models\PortalMenu;
 use App\Models\PortalModule;
 use App\Models\User;
+use App\Models\UserRole;
 use App\Models\UserType;
 use App\Services\PortalAccess;
 use Database\Seeders\DatabaseSeeder;
@@ -116,12 +118,29 @@ class PortalAccessTest extends TestCase
         $this->actingAs($recruiter)->get(route('recruiter.dashboard'))->assertForbidden();
     }
 
+    public function test_expected_portal_roles_are_seeded_by_category(): void
+    {
+        $expected = [
+            'administrator' => ['Super Administrator', 'Platform Administrator', 'Operations Manager', 'Job Moderator', 'Recruiter Verification Officer', 'Candidate Verification Officer', 'Marketing Manager', 'Finance and Commission Manager', 'Support Executive', 'Auditor'],
+            'recruiter' => ['Organization Owner', 'Recruiter Administrator', 'Hiring Manager', 'Recruiter', 'Interviewer', 'Recruiter Finance User', 'Organization Viewer'],
+            'talent' => ['Candidate'],
+        ];
+
+        foreach ($expected as $category => $roles) {
+            foreach ($roles as $role) {
+                $this->assertDatabaseHas('user_roles', ['category' => $category, 'name' => $role, 'is_active' => true]);
+            }
+        }
+
+        $this->assertDatabaseHas('user_roles', ['name' => 'Super Administrator', 'is_super_admin' => true]);
+    }
+
     public function test_roles_are_category_specific_and_copy_permissions_to_the_user(): void
     {
         $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
         $talent = User::query()->where('email', 'talent@example.com')->firstOrFail();
-        $talentRole = \App\Models\UserRole::query()->where('slug', 'candidate-viewer')->firstOrFail();
-        $adminRole = \App\Models\UserRole::query()->where('slug', 'operations-administrator')->firstOrFail();
+        $talentRole = UserRole::query()->where('slug', 'candidate')->firstOrFail();
+        $adminRole = UserRole::query()->where('slug', 'operations-manager')->firstOrFail();
 
         $this->actingAs($administrator)->put(route('admin.accounts.role', $talent->id), ['user_role_id' => $talentRole->id])->assertRedirect();
         $this->assertDatabaseHas('users', ['id' => $talent->id, 'user_role_id' => $talentRole->id]);
@@ -133,11 +152,11 @@ class PortalAccessTest extends TestCase
     public function test_role_template_changes_do_not_overwrite_individual_permissions(): void
     {
         $recruiter = User::query()->where('email', 'recruiter@example.com')->firstOrFail();
-        $menu = \App\Models\PortalMenu::query()->where('slug', 'job-postings')->firstOrFail();
+        $menu = PortalMenu::query()->where('slug', 'job-postings')->firstOrFail();
 
         $recruiter->role->menus()->updateExistingPivot($menu->id, ['can_view' => false]);
 
-        $this->assertTrue(app(PortalAccess::class)->menu($recruiter->fresh(['role','userType']), $menu, 'view'));
+        $this->assertTrue(app(PortalAccess::class)->menu($recruiter->fresh(['role', 'userType']), $menu, 'view'));
     }
 
     public function test_super_admin_has_full_permissions_without_permission_rows(): void
@@ -146,7 +165,9 @@ class PortalAccessTest extends TestCase
         $administrator->permittedModules()->detach();
         $administrator->permittedMenus()->detach();
 
-        foreach (PortalModule::query()->get() as $module) $this->assertTrue(app(PortalAccess::class)->module($administrator->fresh(['role','userType']), $module));
+        foreach (PortalModule::query()->get() as $module) {
+            $this->assertTrue(app(PortalAccess::class)->module($administrator->fresh(['role', 'userType']), $module));
+        }
         $this->actingAs($administrator)->get(route('admin.roles.index'))->assertOk()->assertSee('Available roles');
         $this->get(route('recruiter.dashboard'))->assertOk();
         $this->get(route('talent.dashboard'))->assertOk();
@@ -171,7 +192,7 @@ class PortalAccessTest extends TestCase
         $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
         $talent = User::query()->where('email', 'talent@example.com')->firstOrFail();
         $career = PortalModule::query()->where('slug', 'career')->firstOrFail();
-        $findJobs = \App\Models\PortalMenu::query()->where('slug', 'find-jobs')->firstOrFail();
+        $findJobs = PortalMenu::query()->where('slug', 'find-jobs')->firstOrFail();
 
         $this->actingAs($administrator)->put(route('admin.accounts.permissions.update', $talent->id), [
             'modules' => [$career->id => 1],

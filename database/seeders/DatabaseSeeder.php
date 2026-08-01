@@ -84,26 +84,38 @@ class DatabaseSeeder extends Seeder
         $this->grant($recruiter, $recruitment, $recruiterMenus, true);
         $this->grant($talent, $career, $talentMenus, false);
 
-        $superAdminRole = $this->role(UserCategory::Administrator, 'Super Admin', 'super-admin', true, 'Unrestricted access to every module and action.');
-        $adminRole = $this->role(UserCategory::Administrator, 'Operations Administrator', 'operations-administrator', false, 'Manages users, access, and portal operations.');
-        $hiringManager = $this->role(UserCategory::Recruiter, 'Hiring Manager', 'hiring-manager', false, 'Full recruitment workflow permissions.');
-        $recruiterMember = $this->role(UserCategory::Recruiter, 'Recruiter Member', 'recruiter-member', false, 'Day-to-day recruiter access.');
-        $candidate = $this->role(UserCategory::Talent, 'Candidate', 'candidate', false, 'Standard career and application access.');
-        $candidateViewer = $this->role(UserCategory::Talent, 'Candidate Viewer', 'candidate-viewer', false, 'Read-only career access.');
-
-        $this->roleTemplate($adminRole, $administration, $adminMenus, true);
-        $this->roleTemplate($hiringManager, $recruitment, $recruiterMenus, true);
-        $this->roleTemplate($recruiterMember, $recruitment, $recruiterMenus, false);
-        $this->roleTemplate($candidate, $career, $talentMenus, false);
-        $this->roleTemplate($candidateViewer, $career, $talentMenus, false);
+        $administratorRoles = $this->seedRoles(UserCategory::Administrator, $administration, $adminMenus, [
+            ['Super Administrator', 'super-admin', true, true, 'Unrestricted access to every module and action.'],
+            ['Platform Administrator', 'platform-administrator', false, true, 'Manages platform configuration, users, access, and shared data.'],
+            ['Operations Manager', 'operations-manager', false, true, 'Manages day-to-day placement portal operations.'],
+            ['Job Moderator', 'job-moderator', false, false, 'Reviews job postings for quality and policy compliance.'],
+            ['Recruiter Verification Officer', 'recruiter-verification-officer', false, false, 'Reviews recruiter accounts and organization verification.'],
+            ['Candidate Verification Officer', 'candidate-verification-officer', false, false, 'Reviews candidate profiles and submitted documents.'],
+            ['Marketing Manager', 'marketing-manager', false, false, 'Manages portal marketing and promotional activity.'],
+            ['Finance and Commission Manager', 'finance-and-commission-manager', false, false, 'Oversees finance, billing, and commission operations.'],
+            ['Support Executive', 'support-executive', false, false, 'Supports recruiter and candidate users.'],
+            ['Auditor', 'auditor', false, false, 'Read-only oversight of portal activity and access records.'],
+        ]);
+        $recruiterRoles = $this->seedRoles(UserCategory::Recruiter, $recruitment, $recruiterMenus, [
+            ['Organization Owner', 'organization-owner', false, true, 'Owns the organization account and its recruitment workspace.'],
+            ['Recruiter Administrator', 'recruiter-administrator', false, true, 'Administers recruiters and hiring activity for the organization.'],
+            ['Hiring Manager', 'hiring-manager', false, true, 'Manages jobs, applicants, and hiring decisions.'],
+            ['Recruiter', 'recruiter', false, false, 'Runs day-to-day sourcing and recruitment activity.'],
+            ['Interviewer', 'interviewer', false, false, 'Reviews assigned candidates and records interview feedback.'],
+            ['Recruiter Finance User', 'recruiter-finance-user', false, false, 'Reviews organization billing and recruitment finance information.'],
+            ['Organization Viewer', 'organization-viewer', false, false, 'Read-only access to the organization recruitment workspace.'],
+        ]);
+        $candidateRoles = $this->seedRoles(UserCategory::Talent, $career, $talentMenus, [
+            ['Candidate', 'candidate', false, false, 'Standard candidate career and application access.'],
+        ]);
 
         $assign = app(RolePermissionService::class);
-        $assign->assign($this->user('Portal Administrator', 'admin@example.com', $superAdmin), $superAdminRole, null, false);
-        $assign->assign($this->user('Placement Officer', 'officer@example.com', $placementOfficer), $adminRole, null, false);
-        $assign->assign($this->user('Demo Recruiter', 'recruiter@example.com', $corporateRecruiter), $hiringManager, null, false);
-        $assign->assign($this->user('Agency Recruiter', 'agency@example.com', $staffingAgency), $recruiterMember, null, false);
-        $assign->assign($this->user('Demo Talent', 'talent@example.com', $graduate), $candidate, null, false);
-        $assign->assign($this->user('Experienced Candidate', 'candidate@example.com', $experienced), $candidateViewer, null, false);
+        $assign->assign($this->user('Portal Administrator', 'admin@example.com', $superAdmin), $administratorRoles['super-admin'], null, false);
+        $assign->assign($this->user('Placement Officer', 'officer@example.com', $placementOfficer), $administratorRoles['operations-manager'], null, false);
+        $assign->assign($this->user('Demo Recruiter', 'recruiter@example.com', $corporateRecruiter), $recruiterRoles['hiring-manager'], null, false);
+        $assign->assign($this->user('Agency Recruiter', 'agency@example.com', $staffingAgency), $recruiterRoles['recruiter'], null, false);
+        $assign->assign($this->user('Demo Talent', 'talent@example.com', $graduate), $candidateRoles['candidate'], null, false);
+        $assign->assign($this->user('Experienced Candidate', 'candidate@example.com', $experienced), $candidateRoles['candidate'], null, false);
 
         $this->seedSharedMasters();
     }
@@ -172,6 +184,24 @@ class DatabaseSeeder extends Seeder
     private function role(UserCategory $category, string $name, string $slug, bool $super = false, ?string $description = null): UserRole
     {
         return UserRole::query()->updateOrCreate(['slug' => $slug], ['category' => $category, 'name' => $name, 'description' => $description, 'is_super_admin' => $super, 'is_active' => true]);
+    }
+
+    /**
+     * @param  array<int, PortalMenu>  $menus
+     * @param  array<int, array{string, string, bool, bool, string}>  $definitions
+     * @return array<string, UserRole>
+     */
+    private function seedRoles(UserCategory $category, PortalModule $module, array $menus, array $definitions): array
+    {
+        $roles = [];
+
+        foreach ($definitions as [$name, $slug, $super, $manage, $description]) {
+            $role = $this->role($category, $name, $slug, $super, $description);
+            $this->roleTemplate($role, $module, $menus, $manage);
+            $roles[$slug] = $role;
+        }
+
+        return $roles;
     }
 
     /** @param array<int, PortalMenu> $menus */
