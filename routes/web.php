@@ -5,6 +5,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\AccountReviewController;
 use App\Http\Controllers\Admin\AdSettingController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SessionReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RegistrationController;
@@ -55,6 +56,8 @@ Route::middleware(['auth', 'category:administrator', 'module:administration'])->
     Route::put('/accounts/{user}/permissions', [RoleController::class, 'updateUserPermissions'])->middleware('menu:role-management,update')->name('accounts.permissions.update');
     Route::get('/google-ads', [AdSettingController::class, 'edit'])->middleware('menu:google-ads,view')->name('ads.edit');
     Route::put('/google-ads', [AdSettingController::class, 'update'])->middleware('menu:google-ads,update')->name('ads.update');
+    Route::get('/sessions', [SessionReportController::class, 'index'])->middleware('menu:session-reports,view')->name('sessions.index');
+    Route::get('/sessions/{session}', [SessionReportController::class, 'show'])->middleware('menu:session-reports,view')->name('sessions.show');
 });
 
 Route::middleware(['auth', 'category:recruiter', 'module:recruitment'])->prefix('recruiter')->name('recruiter.')->group(function () {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\UserCategory;
+use App\Services\UserSessionTracker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ class AuthController extends Controller
         return $this->create(true);
     }
 
-    public function store(Request $request, bool $administratorPortal = false): RedirectResponse
+    public function store(Request $request, UserSessionTracker $sessions, bool $administratorPortal = false): RedirectResponse
     {
         $credentials = $request->validate([
             'email' => ['required', 'email'],
@@ -47,17 +48,21 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'This account cannot sign in through this portal.'])->onlyInput('email');
         }
 
+        $sessions->start($request, $user, $request->boolean('remember'));
+
         return redirect()->intended(route($user->dashboardRoute()));
     }
 
-    public function storeAdministrator(Request $request): RedirectResponse
+    public function storeAdministrator(Request $request, UserSessionTracker $sessions): RedirectResponse
     {
-        return $this->store($request, true);
+        return $this->store($request, $sessions, true);
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, UserSessionTracker $sessions): RedirectResponse
     {
         $wasAdministrator = $request->user()?->userType?->category === UserCategory::Administrator;
+
+        $sessions->close($request);
 
         Auth::logout();
         $request->session()->invalidate();

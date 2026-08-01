@@ -43,6 +43,7 @@ class DatabaseSeeder extends Seeder
             $this->menu($administration, 'Permission Audit', 'permission-audit', 'admin.permission-audit', 'bi-clock-history', 50, $accessControl),
             $this->menu($administration, 'User Types', 'user-types', null, 'bi-diagram-3', 10, $userManagement),
             $this->menu($administration, 'Member Directory', 'member-directory', null, 'bi-person-lines-fill', 20, $userManagement),
+            $this->menu($administration, 'Session Reports', 'session-reports', 'admin.sessions.index', 'bi-pc-display-horizontal', 30, $userManagement),
             $this->menu($administration, 'Module Access', 'module-access', 'admin.access', 'bi-grid', 10, $permissionSetup),
             $this->menu($administration, 'Menu Permissions', 'menu-permissions', 'admin.access', 'bi-list-check', 20, $permissionSetup),
             $this->menu($administration, 'Google Ads', 'google-ads', 'admin.ads.edit', 'bi-badge-ad', 10, $monetization),

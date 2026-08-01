@@ -42,6 +42,11 @@ class User extends Authenticatable
         return $this->hasMany(UserAccountReview::class)->latest();
     }
 
+    public function sessionHistories(): HasMany
+    {
+        return $this->hasMany(UserSessionHistory::class);
+    }
+
     public function dashboardRoute(): string
     {
         return $this->userType?->category->dashboardRoute() ?? 'home';

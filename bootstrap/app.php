@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsureMenuPermission;
 use App\Http\Middleware\EnsureModuleAccess;
 use App\Http\Middleware\EnsureUserCategory;
+use App\Http\Middleware\TrackUserSession;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->appendToGroup('web', TrackUserSession::class);
+
         $middleware->alias([
             'category' => EnsureUserCategory::class,
             'module' => EnsureModuleAccess::class,
