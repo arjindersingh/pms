@@ -83,6 +83,7 @@ class DatabaseSeeder extends Seeder
         $applications = $this->menu($career, 'Applications', 'applications', null, 'bi-file-earmark-person', 20, $careerWorkspace);
         $talentMenus = [
             $talentDashboard, $careerWorkspace, $opportunities, $applications,
+            $this->menu($career, 'Candidate Profile', 'candidate-profile', 'talent.profile.edit', 'bi-person-vcard', 10, $careerWorkspace),
             $this->menu($career, 'Recommended Jobs', 'find-jobs', null, 'bi-stars', 10, $opportunities),
             $this->menu($career, 'Saved Jobs', 'saved-jobs', null, 'bi-bookmark-heart', 20, $opportunities),
             $this->menu($career, 'Active Applications', 'my-applications', null, 'bi-hourglass-split', 10, $applications),

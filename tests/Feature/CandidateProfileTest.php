@@ -39,6 +39,21 @@ class CandidateProfileTest extends TestCase
         $this->assertDatabaseHas('candidate_educations', ['candidate_profile_id' => $profile->id, 'degree_name' => 'B.Tech.']);
     }
 
+    public function test_candidate_profile_is_available_in_talent_sidebar(): void
+    {
+        $candidate = User::where('email', 'talent@example.com')->firstOrFail();
+
+        $this->actingAs($candidate)->get(route('talent.dashboard'))
+            ->assertOk()
+            ->assertSee('Candidate Profile')
+            ->assertSee(route('talent.profile.edit'), false);
+
+        $this->assertDatabaseHas('portal_menus', [
+            'slug' => 'candidate-profile',
+            'route_name' => 'talent.profile.edit',
+        ]);
+    }
+
     public function test_geography_and_form_masters_are_seeded_for_fresh_deployments(): void
     {
         $india = Country::where('code', 'IN')->firstOrFail();
