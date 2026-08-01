@@ -20,10 +20,50 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->ignoreStaleViteHotFile();
+
         // Root-relative build URLs work behind forwarded ports, HTTPS proxies,
         // and IDE previews without relying on APP_URL host detection.
         Vite::createAssetPathsUsing(
             fn (string $path, ?bool $secure = null): string => '/'.ltrim($path, '/'),
         );
+    }
+
+    /**
+     * Fall back to compiled assets when an interrupted Vite process leaves its
+     * hot file behind. Non-local environments must never depend on a dev server.
+     */
+    private function ignoreStaleViteHotFile(): void
+    {
+        $hotFile = public_path('hot');
+
+        if (! file_exists($hotFile)) {
+            return;
+        }
+
+        if (! $this->app->environment('local') || ! $this->viteServerIsReachable($hotFile)) {
+            Vite::useHotFile(storage_path('framework/vite.hot'));
+        }
+    }
+
+    private function viteServerIsReachable(string $hotFile): bool
+    {
+        $url = trim((string) file_get_contents($hotFile));
+        $host = parse_url($url, PHP_URL_HOST);
+        $port = parse_url($url, PHP_URL_PORT);
+
+        if (! is_string($host) || ! is_int($port)) {
+            return false;
+        }
+
+        $connection = @fsockopen($host, $port, $errorCode, $errorMessage, 0.1);
+
+        if ($connection === false) {
+            return false;
+        }
+
+        fclose($connection);
+
+        return true;
     }
 }
