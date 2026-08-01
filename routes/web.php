@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Admin\AccountReviewController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegistrationController;
 use Illuminate\Support\Facades\Route;
@@ -20,11 +23,34 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
 
+Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
+    Route::get('/profile', [AccountController::class, 'editProfile'])->name('profile');
+    Route::patch('/profile', [AccountController::class, 'updateProfile'])->name('profile.update');
+    Route::get('/settings', [AccountController::class, 'settings'])->name('settings');
+    Route::get('/error-settings', [AccountController::class, 'editErrorSettings'])->name('error-settings');
+    Route::put('/error-settings', [AccountController::class, 'updateErrorSettings'])->name('error-settings.update');
+    Route::get('/password', [AccountController::class, 'editPassword'])->name('password');
+    Route::put('/password', [AccountController::class, 'updatePassword'])->name('password.update');
+});
+
 Route::middleware(['auth', 'category:administrator', 'module:administration'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'administrator'])
         ->middleware('menu:admin-dashboard,view')->name('dashboard');
     Route::view('/access', 'admin.access')
         ->middleware('menu:module-access,update')->name('access');
+    Route::get('/accounts', [AccountReviewController::class, 'index'])->middleware('menu:account-review,view')->name('accounts.index');
+    Route::get('/accounts/{user}', [AccountReviewController::class, 'show'])->middleware('menu:account-review,view')->name('accounts.show');
+    Route::patch('/accounts/{user}/status', [AccountReviewController::class, 'updateStatus'])->middleware('menu:account-review,update')->name('accounts.status');
+    Route::delete('/accounts/{user}', [AccountReviewController::class, 'destroy'])->middleware('menu:account-review,delete')->name('accounts.destroy');
+    Route::post('/accounts/{user}/restore', [AccountReviewController::class, 'restore'])->middleware('menu:account-review,update')->name('accounts.restore');
+    Route::get('/roles', [RoleController::class, 'index'])->middleware('menu:role-management,view')->name('roles.index');
+    Route::get('/permission-audit', [RoleController::class, 'audit'])->middleware('menu:permission-audit,view')->name('permission-audit');
+    Route::post('/roles', [RoleController::class, 'store'])->middleware('menu:role-management,create')->name('roles.store');
+    Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->middleware('menu:role-management,update')->name('roles.edit');
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('menu:role-management,update')->name('roles.update');
+    Route::put('/accounts/{user}/role', [RoleController::class, 'assign'])->middleware('menu:role-management,update')->name('accounts.role');
+    Route::get('/accounts/{user}/permissions', [RoleController::class, 'editUserPermissions'])->middleware('menu:role-management,update')->name('accounts.permissions');
+    Route::put('/accounts/{user}/permissions', [RoleController::class, 'updateUserPermissions'])->middleware('menu:role-management,update')->name('accounts.permissions.update');
 });
 
 Route::middleware(['auth', 'category:recruiter', 'module:recruitment'])->prefix('recruiter')->name('recruiter.')->group(function () {

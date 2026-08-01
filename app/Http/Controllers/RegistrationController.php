@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\UserCategory;
 use App\Models\User;
 use App\Models\UserType;
+use App\Models\UserRole;
+use App\Services\RolePermissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -64,6 +66,15 @@ class RegistrationController extends Controller
             'password' => $validated['password'],
             'is_active' => true,
         ]));
+
+        $defaultRoleSlug = match ($category) {
+            UserCategory::Recruiter => 'recruiter-member',
+            UserCategory::Talent => 'candidate',
+            default => null,
+        };
+        if ($defaultRoleSlug && ($role = UserRole::query()->where('slug', $defaultRoleSlug)->where('is_active', true)->first())) {
+            app(RolePermissionService::class)->assign($user->load('userType'), $role);
+        }
 
         Auth::login($user);
         $request->session()->regenerate();

@@ -11,6 +11,19 @@
 
     <div class="header-right">
         <div class="dropdown">
+            <button class="header-action" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Change theme" title="Theme"><i class="bi bi-palette"></i></button>
+            <div class="dropdown-menu dropdown-menu-end theme-menu border-0 shadow-lg p-2">
+                <div class="dropdown-heading"><strong>Interface theme</strong><small>Saved on this device</small></div>
+                <template x-for="option in themeOptions" :key="option.key">
+                    <button class="dropdown-item theme-option" type="button" @click="setTheme(option.key)" :class="{ 'active': theme === option.key }">
+                        <span class="theme-swatch" :style="`--swatch:${option.accent};--swatch-dark:${option.sidebar}`"></span>
+                        <span><strong x-text="option.name"></strong><small x-text="option.description"></small></span>
+                        <i class="bi bi-check-lg ms-auto" x-show="theme === option.key"></i>
+                    </button>
+                </template>
+            </div>
+        </div>
+        <div class="dropdown">
             <button class="header-action module-launcher" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Open modules"><i class="bi bi-grid-3x3-gap-fill"></i></button>
             <div class="dropdown-menu dropdown-menu-end module-menu border-0 shadow-lg p-3">
                 <div class="dropdown-heading"><strong>Modules</strong><small>Your available workspaces</small></div>
@@ -34,9 +47,10 @@
             <div class="dropdown-menu dropdown-menu-end profile-menu border-0 shadow-lg p-2">
                 <div class="profile-menu-head"><span class="profile-avatar large">{{ mb_substr(auth()->user()->name, 0, 1) }}</span><div><strong>{{ auth()->user()->name }}</strong><small>{{ auth()->user()->email }}</small></div></div>
                 <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#"><i class="bi bi-person"></i>My profile</a>
-                <a class="dropdown-item" href="#"><i class="bi bi-sliders"></i>Appearance</a>
-                <a class="dropdown-item" href="#"><i class="bi bi-gear"></i>Preferences</a>
+                <a class="dropdown-item" href="{{ route('account.profile') }}"><i class="bi bi-person"></i>Profile</a>
+                <a class="dropdown-item" href="{{ route('account.settings') }}"><i class="bi bi-gear"></i>Account settings</a>
+                <a class="dropdown-item" href="{{ route('account.password') }}"><i class="bi bi-key"></i>Change password</a>
+                <a class="dropdown-item" href="{{ route('account.error-settings') }}"><i class="bi bi-exclamation-diamond"></i>Error settings</a>
                 <div class="dropdown-divider"></div>
                 <form method="POST" action="{{ route('logout') }}">@csrf<button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-right"></i>Sign out</button></form>
             </div>

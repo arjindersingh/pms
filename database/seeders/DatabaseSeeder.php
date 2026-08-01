@@ -7,6 +7,8 @@ use App\Models\PortalMenu;
 use App\Models\PortalModule;
 use App\Models\User;
 use App\Models\UserType;
+use App\Models\UserRole;
+use App\Services\RolePermissionService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -35,6 +37,9 @@ class DatabaseSeeder extends Seeder
         $permissionSetup = $this->menu($administration, 'Permission Setup', 'permission-setup', null, 'bi-sliders', 20, $accessControl);
         $adminMenus = [
             $adminDashboard, $accessControl, $userManagement, $permissionSetup,
+            $this->menu($administration, 'Account Review', 'account-review', 'admin.accounts.index', 'bi-person-check', 30, $accessControl),
+            $this->menu($administration, 'Roles & Permissions', 'role-management', 'admin.roles.index', 'bi-person-gear', 40, $accessControl),
+            $this->menu($administration, 'Permission Audit', 'permission-audit', 'admin.permission-audit', 'bi-clock-history', 50, $accessControl),
             $this->menu($administration, 'User Types', 'user-types', null, 'bi-diagram-3', 10, $userManagement),
             $this->menu($administration, 'Member Directory', 'member-directory', null, 'bi-person-lines-fill', 20, $userManagement),
             $this->menu($administration, 'Module Access', 'module-access', 'admin.access', 'bi-grid', 10, $permissionSetup),
@@ -69,12 +74,26 @@ class DatabaseSeeder extends Seeder
         $this->grant($recruiter, $recruitment, $recruiterMenus, true);
         $this->grant($talent, $career, $talentMenus, false);
 
-        $this->user('Portal Administrator', 'admin@example.com', $superAdmin);
-        $this->user('Placement Officer', 'officer@example.com', $placementOfficer);
-        $this->user('Demo Recruiter', 'recruiter@example.com', $corporateRecruiter);
-        $this->user('Agency Recruiter', 'agency@example.com', $staffingAgency);
-        $this->user('Demo Talent', 'talent@example.com', $graduate);
-        $this->user('Experienced Candidate', 'candidate@example.com', $experienced);
+        $superAdminRole = $this->role(UserCategory::Administrator, 'Super Admin', 'super-admin', true, 'Unrestricted access to every module and action.');
+        $adminRole = $this->role(UserCategory::Administrator, 'Operations Administrator', 'operations-administrator', false, 'Manages users, access, and portal operations.');
+        $hiringManager = $this->role(UserCategory::Recruiter, 'Hiring Manager', 'hiring-manager', false, 'Full recruitment workflow permissions.');
+        $recruiterMember = $this->role(UserCategory::Recruiter, 'Recruiter Member', 'recruiter-member', false, 'Day-to-day recruiter access.');
+        $candidate = $this->role(UserCategory::Talent, 'Candidate', 'candidate', false, 'Standard career and application access.');
+        $candidateViewer = $this->role(UserCategory::Talent, 'Candidate Viewer', 'candidate-viewer', false, 'Read-only career access.');
+
+        $this->roleTemplate($adminRole, $administration, $adminMenus, true);
+        $this->roleTemplate($hiringManager, $recruitment, $recruiterMenus, true);
+        $this->roleTemplate($recruiterMember, $recruitment, $recruiterMenus, false);
+        $this->roleTemplate($candidate, $career, $talentMenus, false);
+        $this->roleTemplate($candidateViewer, $career, $talentMenus, false);
+
+        $assign = app(RolePermissionService::class);
+        $assign->assign($this->user('Portal Administrator', 'admin@example.com', $superAdmin), $superAdminRole, null, false);
+        $assign->assign($this->user('Placement Officer', 'officer@example.com', $placementOfficer), $adminRole, null, false);
+        $assign->assign($this->user('Demo Recruiter', 'recruiter@example.com', $corporateRecruiter), $hiringManager, null, false);
+        $assign->assign($this->user('Agency Recruiter', 'agency@example.com', $staffingAgency), $recruiterMember, null, false);
+        $assign->assign($this->user('Demo Talent', 'talent@example.com', $graduate), $candidate, null, false);
+        $assign->assign($this->user('Experienced Candidate', 'candidate@example.com', $experienced), $candidateViewer, null, false);
     }
 
     private function type(UserCategory $category, string $name, string $slug, ?UserType $parent = null): UserType
@@ -118,9 +137,21 @@ class DatabaseSeeder extends Seeder
         }
     }
 
-    private function user(string $name, string $email, UserType $type): void
+    private function role(UserCategory $category, string $name, string $slug, bool $super = false, ?string $description = null): UserRole
     {
-        User::query()->updateOrCreate(
+        return UserRole::query()->updateOrCreate(['slug' => $slug], ['category' => $category, 'name' => $name, 'description' => $description, 'is_super_admin' => $super, 'is_active' => true]);
+    }
+
+    /** @param array<int, PortalMenu> $menus */
+    private function roleTemplate(UserRole $role, PortalModule $module, array $menus, bool $manage): void
+    {
+        $role->modules()->syncWithoutDetaching([$module->id => ['enabled' => true]]);
+        foreach ($menus as $menu) $role->menus()->syncWithoutDetaching([$menu->id => ['can_view' => true, 'can_create' => $manage, 'can_update' => $manage, 'can_delete' => $manage]]);
+    }
+
+    private function user(string $name, string $email, UserType $type): User
+    {
+        return User::query()->updateOrCreate(
             ['email' => $email],
             ['name' => $name, 'user_type_id' => $type->id, 'password' => Hash::make('password'), 'email_verified_at' => now(), 'is_active' => true],
         );

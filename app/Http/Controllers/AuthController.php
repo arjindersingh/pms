@@ -32,14 +32,14 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
-        $user = $request->user()->load('userType');
+        $user = $request->user()->load(['userType', 'role']);
 
         $category = $user->userType?->category;
         $allowedPortal = $administratorPortal
             ? $category === UserCategory::Administrator
             : in_array($category, [UserCategory::Recruiter, UserCategory::Talent], true);
 
-        if (! $user->userType?->is_active || ! $allowedPortal) {
+        if (! $user->userType?->is_active || ($user->role && ! $user->role->is_active) || ! $allowedPortal) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

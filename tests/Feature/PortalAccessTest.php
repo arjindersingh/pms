@@ -86,15 +86,85 @@ class PortalAccessTest extends TestCase
         $this->assertTrue($access->menu($recruiter, 'job-postings', 'create'));
     }
 
-    public function test_subtype_assignment_overrides_its_parent(): void
+    public function test_individual_permission_overrides_the_assigned_role(): void
     {
         $recruiter = User::query()->where('email', 'recruiter@example.com')->firstOrFail();
         $module = PortalModule::query()->where('slug', 'recruitment')->firstOrFail();
 
-        $recruiter->userType->modules()->syncWithoutDetaching([$module->id => ['enabled' => false]]);
+        $recruiter->permittedModules()->syncWithoutDetaching([$module->id => ['enabled' => false]]);
 
         $this->assertFalse(app(PortalAccess::class)->module($recruiter->fresh('userType'), $module));
         $this->actingAs($recruiter)->get(route('recruiter.dashboard'))->assertForbidden();
+    }
+
+    public function test_roles_are_category_specific_and_copy_permissions_to_the_user(): void
+    {
+        $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
+        $talent = User::query()->where('email', 'talent@example.com')->firstOrFail();
+        $talentRole = \App\Models\UserRole::query()->where('slug', 'candidate-viewer')->firstOrFail();
+        $adminRole = \App\Models\UserRole::query()->where('slug', 'operations-administrator')->firstOrFail();
+
+        $this->actingAs($administrator)->put(route('admin.accounts.role', $talent->id), ['user_role_id' => $talentRole->id])->assertRedirect();
+        $this->assertDatabaseHas('users', ['id' => $talent->id, 'user_role_id' => $talentRole->id]);
+        $this->assertDatabaseHas('portal_menu_user', ['user_id' => $talent->id, 'can_view' => true]);
+
+        $this->put(route('admin.accounts.role', $talent->id), ['user_role_id' => $adminRole->id])->assertSessionHasErrors('user_role_id');
+    }
+
+    public function test_role_template_changes_do_not_overwrite_individual_permissions(): void
+    {
+        $recruiter = User::query()->where('email', 'recruiter@example.com')->firstOrFail();
+        $menu = \App\Models\PortalMenu::query()->where('slug', 'job-postings')->firstOrFail();
+
+        $recruiter->role->menus()->updateExistingPivot($menu->id, ['can_view' => false]);
+
+        $this->assertTrue(app(PortalAccess::class)->menu($recruiter->fresh(['role','userType']), $menu, 'view'));
+    }
+
+    public function test_super_admin_has_full_permissions_without_permission_rows(): void
+    {
+        $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
+        $administrator->permittedModules()->detach();
+        $administrator->permittedMenus()->detach();
+
+        foreach (PortalModule::query()->get() as $module) $this->assertTrue(app(PortalAccess::class)->module($administrator->fresh(['role','userType']), $module));
+        $this->actingAs($administrator)->get(route('admin.roles.index'))->assertOk()->assertSee('Available roles');
+        $this->get(route('recruiter.dashboard'))->assertOk();
+        $this->get(route('talent.dashboard'))->assertOk();
+    }
+
+    public function test_admin_dashboard_exposes_permission_control_center_and_audit_log(): void
+    {
+        $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
+
+        $this->actingAs($administrator)->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('ACCESS CONTROL CENTER')
+            ->assertSee('Permission workflow')
+            ->assertSee(route('admin.roles.index'), false)
+            ->assertSee(route('admin.permission-audit'), false);
+
+        $this->get(route('admin.permission-audit'))->assertOk()->assertSee('Permission audit log');
+    }
+
+    public function test_individual_permission_change_is_recorded_in_permission_audit(): void
+    {
+        $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
+        $talent = User::query()->where('email', 'talent@example.com')->firstOrFail();
+        $career = PortalModule::query()->where('slug', 'career')->firstOrFail();
+        $findJobs = \App\Models\PortalMenu::query()->where('slug', 'find-jobs')->firstOrFail();
+
+        $this->actingAs($administrator)->put(route('admin.accounts.permissions.update', $talent->id), [
+            'modules' => [$career->id => 1],
+            'menus' => [$findJobs->id => ['view' => 1]],
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('permission_audits', [
+            'actor_id' => $administrator->id,
+            'target_user_id' => $talent->id,
+            'event' => 'individual_permissions_updated',
+        ]);
+        $this->assertNotNull($talent->fresh()->permissions_customized_at);
     }
 
     public function test_crud_permissions_are_independent(): void
@@ -155,6 +225,8 @@ class PortalAccessTest extends TestCase
 
         $this->assertDatabaseHas('users', ['email' => 'new-recruiter@example.com']);
         $this->assertDatabaseHas('users', ['email' => 'new-candidate@example.com']);
+        $this->assertNotNull(User::where('email', 'new-recruiter@example.com')->first()->user_role_id);
+        $this->assertNotNull(User::where('email', 'new-candidate@example.com')->first()->user_role_id);
     }
 
     public function test_only_administrators_can_manage_the_access_matrix(): void
@@ -164,6 +236,111 @@ class PortalAccessTest extends TestCase
 
         $this->actingAs($administrator)->get(route('admin.access'))->assertOk()->assertSee('Access Management');
         $this->actingAs($recruiter)->get(route('admin.access'))->assertForbidden();
+    }
+
+    public function test_dashboard_top_bar_contains_theme_module_and_account_menus(): void
+    {
+        $user = User::query()->where('email', 'recruiter@example.com')->firstOrFail();
+
+        $this->actingAs($user)->get(route('recruiter.dashboard'))
+            ->assertOk()
+            ->assertSee('Change theme')
+            ->assertSee('Your available workspaces')
+            ->assertSee(route('account.profile'), false)
+            ->assertSee(route('account.password'), false);
+    }
+
+    public function test_user_can_update_profile_and_password(): void
+    {
+        $user = User::query()->where('email', 'talent@example.com')->firstOrFail();
+
+        $this->actingAs($user)->patch(route('account.profile.update'), [
+            'name' => 'Updated Talent',
+            'email' => 'updated@example.com',
+        ])->assertRedirect();
+
+        $this->put(route('account.password.update'), [
+            'current_password' => 'password',
+            'password' => 'NewPassword123',
+            'password_confirmation' => 'NewPassword123',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Updated Talent', 'email' => 'updated@example.com']);
+    }
+
+    public function test_user_can_save_persistent_error_display_settings(): void
+    {
+        $user = User::query()->where('email', 'talent@example.com')->firstOrFail();
+
+        $this->actingAs($user)->put(route('account.error-settings.update'), [
+            'placement' => 'dialog', 'font_family' => 'mono', 'font_size' => 18,
+            'text_color' => '#111111', 'background_color' => '#ffeeee', 'accent_color' => '#cc0000',
+            'density' => 'spacious', 'motion' => 'fade', 'show_icon' => '1',
+            'allow_dismiss' => '0', 'group_messages' => '1', 'auto_dismiss_seconds' => 10,
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('user_error_settings', [
+            'user_id' => $user->id, 'placement' => 'dialog', 'font_family' => 'mono',
+            'font_size' => 18, 'accent_color' => '#cc0000', 'auto_dismiss_seconds' => 10,
+        ]);
+
+        $this->get(route('account.error-settings'))->assertOk()->assertSee('Dialogue box')->assertSee('value="#cc0000"', false);
+    }
+
+    public function test_saved_error_preferences_control_validation_error_renderer(): void
+    {
+        $user = User::query()->where('email', 'recruiter@example.com')->firstOrFail();
+        $user->errorSetting()->create(['placement' => 'bottom_right', 'font_size' => 17]);
+
+        $this->actingAs($user)->from(route('account.profile'))->patch(route('account.profile.update'), [
+            'name' => '', 'email' => 'not-an-email',
+        ])->assertRedirect(route('account.profile'));
+
+        $this->get(route('account.profile'))
+            ->assertOk()
+            ->assertSee('error-display--bottom_right', false)
+            ->assertSee('--error-size:17px', false)
+            ->assertSee('We couldn’t complete that action');
+    }
+
+    public function test_only_administrators_can_open_account_review(): void
+    {
+        $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
+        $recruiter = User::query()->where('email', 'recruiter@example.com')->firstOrFail();
+
+        $this->actingAs($administrator)->get(route('admin.accounts.index'))
+            ->assertOk()->assertSee('Account review')->assertSee('Demo Recruiter');
+        $this->actingAs($recruiter)->get(route('admin.accounts.index'))->assertForbidden();
+    }
+
+    public function test_administrator_can_suspend_an_account_with_an_audit_record(): void
+    {
+        $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
+        $talent = User::query()->where('email', 'talent@example.com')->firstOrFail();
+
+        $this->actingAs($administrator)->patch(route('admin.accounts.status', $talent->id), [
+            'status' => 'suspended', 'reason' => 'Identity verification requires review.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['id' => $talent->id, 'account_status' => 'suspended', 'is_active' => false]);
+        $this->assertDatabaseHas('user_account_reviews', ['user_id' => $talent->id, 'reviewed_by' => $administrator->id, 'action' => 'status_changed', 'to_status' => 'suspended']);
+
+        auth()->logout();
+        $this->post(route('login.store'), ['email' => $talent->email, 'password' => 'password'])->assertSessionHasErrors('email');
+    }
+
+    public function test_deleted_account_can_be_restored_for_review(): void
+    {
+        $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
+        $recruiter = User::query()->where('email', 'recruiter@example.com')->firstOrFail();
+
+        $this->actingAs($administrator)->delete(route('admin.accounts.destroy', $recruiter->id), ['reason' => 'Duplicate company account.'])
+            ->assertRedirect(route('admin.accounts.index'));
+        $this->assertSoftDeleted('users', ['id' => $recruiter->id]);
+
+        $this->post(route('admin.accounts.restore', $recruiter->id))->assertRedirect();
+        $this->assertDatabaseHas('users', ['id' => $recruiter->id, 'account_status' => 'pending_review', 'is_active' => false, 'deleted_at' => null]);
+        $this->assertDatabaseHas('user_account_reviews', ['user_id' => $recruiter->id, 'action' => 'restored', 'to_status' => 'pending_review']);
     }
 
     public function test_access_matrix_persists_explicit_subtype_permissions(): void

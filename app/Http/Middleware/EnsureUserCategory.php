@@ -10,6 +10,10 @@ class EnsureUserCategory
 {
     public function handle(Request $request, Closure $next, string ...$categories): Response
     {
+        if ($request->user()?->isSuperAdmin()) {
+            return $next($request);
+        }
+
         $category = $request->user()?->userType?->category->value;
 
         abort_unless($category && in_array($category, $categories, true), 403);

@@ -1,0 +1,11 @@
+@extends('layouts.administrator')
+@section('title', 'Permissions for '.$account->name)
+@section('content')
+<a class="account-back" href="{{ route('admin.accounts.show',$account->id) }}"><i class="bi bi-arrow-left"></i> Back to account review</a>
+<div class="dashboard-heading mt-3"><div><span class="dashboard-kicker">INDIVIDUAL ACCESS</span><h1>{{ $account->name }}</h1><p>Role: {{ $account->role?->name ?? 'No role' }}. These permissions belong only to this user.</p></div><span class="permission-custom-badge"><i class="bi bi-person-gear"></i>Individual snapshot</span></div>
+@if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
+<form method="POST" action="{{ route('admin.accounts.permissions.update',$account->id) }}">@csrf @method('PUT')
+    @foreach($modules as $module)<section class="dashboard-card permission-matrix mb-4"><div class="permission-module-head"><div><i class="bi {{ $module->icon }}"></i><strong>{{ $module->name }}</strong></div><label class="form-check form-switch"><input type="hidden" name="modules[{{ $module->id }}]" value="0"><input class="form-check-input" type="checkbox" name="modules[{{ $module->id }}]" value="1" @checked((bool)($modulePermissions[$module->id] ?? false))><span>Module access</span></label></div><div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Menu</th>@foreach(['View','Create','Update','Delete'] as $ability)<th class="text-center">{{ $ability }}</th>@endforeach</tr></thead><tbody>@foreach($module->menus as $menu)@php($permission = $menuPermissions->get($menu->id))<tr><td><i class="bi {{ $menu->icon }} me-2"></i>{{ $menu->name }}</td>@foreach(['view','create','update','delete'] as $ability)<td class="text-center"><input type="hidden" name="menus[{{ $menu->id }}][{{ $ability }}]" value="0"><input class="form-check-input" type="checkbox" name="menus[{{ $menu->id }}][{{ $ability }}]" value="1" @checked((bool)($permission?->{'can_'.$ability}))></td>@endforeach</tr>@endforeach</tbody></table></div></section>@endforeach
+    <div class="permission-savebar"><span><i class="bi bi-shield-check"></i>Effective immediately for this user only.</span><button class="btn btn-portal" type="submit"><i class="bi bi-save"></i>Save individual permissions</button></div>
+</form>
+@endsection

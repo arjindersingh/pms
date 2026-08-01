@@ -16,8 +16,15 @@ class PortalAccess
             ? PortalModule::query()->where('slug', $module)->first()
             : $module;
 
-        if (! $module?->is_active || ! $user->is_active || ! $user->userType?->is_active) {
+        if (! $module?->is_active || ! $user->is_active || ! $user->userType?->is_active || ($user->role && ! $user->role->is_active)) {
             return false;
+        }
+
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->user_role_id) {
+            $assignment = DB::table('portal_module_user')->where('portal_module_id', $module->id)->where('user_id', $user->id)->first();
+            return (bool) ($assignment?->enabled ?? false);
         }
 
         foreach ($user->userType->lineage() as $type) {
@@ -50,6 +57,13 @@ class PortalAccess
 
         if (! $column || ! $menu?->is_active || ! $this->module($user, $menu->module)) {
             return false;
+        }
+
+        if ($user->isSuperAdmin()) return true;
+
+        if ($user->user_role_id) {
+            $assignment = DB::table('portal_menu_user')->where('portal_menu_id', $menu->id)->where('user_id', $user->id)->first();
+            return (bool) ($assignment?->{$column} ?? false);
         }
 
         foreach ($user->userType->lineage() as $type) {
