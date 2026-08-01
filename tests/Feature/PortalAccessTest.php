@@ -36,6 +36,25 @@ class PortalAccessTest extends TestCase
         $this->assertStringContainsString('.btn-primary', file_get_contents($compiledCss));
     }
 
+    public function test_authentication_links_use_the_forwarded_preview_host(): void
+    {
+        $headers = [
+            'X-Forwarded-Host' => 'portal-preview.example.test',
+            'X-Forwarded-Proto' => 'https',
+            'X-Forwarded-Port' => '443',
+        ];
+
+        $this->withHeaders($headers)->get(route('home'))
+            ->assertOk()
+            ->assertSee('href="https://portal-preview.example.test/login"', false)
+            ->assertSee('href="https://portal-preview.example.test/register/talent"', false)
+            ->assertSee('href="https://portal-preview.example.test/register/recruiter"', false);
+
+        $this->withHeaders($headers)->get('/login')
+            ->assertOk()
+            ->assertSee('action="https://portal-preview.example.test/login"', false);
+    }
+
     public function test_login_redirects_each_category_to_its_own_dashboard(): void
     {
         foreach ([

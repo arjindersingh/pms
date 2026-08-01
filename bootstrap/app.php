@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Cloud and IDE previews terminate HTTPS at a reverse proxy. Trust its
+        // forwarded host/protocol so generated auth links stay on the public URL.
+        $middleware->trustProxies(at: '*');
+
         $middleware->appendToGroup('web', TrackUserSession::class);
 
         $middleware->alias([
