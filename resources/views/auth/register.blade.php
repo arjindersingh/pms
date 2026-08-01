@@ -28,5 +28,6 @@
             <p class="text-center text-secondary mt-4 mb-0">Already have an account? <a href="{{ route('login') }}">Sign in</a></p>
         </div>
     </main>
+    <x-system-compatibility />
 </body>
 </html>

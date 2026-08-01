@@ -2,4 +2,12 @@
 
 namespace App\Models;
 
-class QualificationLevel extends SharedMaster {}
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class QualificationLevel extends SharedMaster
+{
+    public function degrees(): HasMany
+    {
+        return $this->hasMany(Degree::class);
+    }
+}

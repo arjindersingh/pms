@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Talent;
 
 use App\Http\Controllers\Controller;
 use App\Models\Country;
+use App\Models\Degree;
+use App\Models\EducationalInstitution;
+use App\Models\EducationAuthority;
 use App\Models\EmploymentType;
 use App\Models\Gender;
 use App\Models\Language;
@@ -12,21 +15,24 @@ use App\Models\ProficiencyLevel;
 use App\Models\QualificationLevel;
 use App\Models\Skill;
 use App\Models\StudyMode;
+use App\Models\Subject;
 use App\Models\WorkMode;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class CandidateProfileController extends Controller
 {
-    private const TABS = ['personal' => 'Personal', 'contact' => 'Contact & Address', 'education' => 'Education', 'experience' => 'Experience', 'skills' => 'Skills & Languages', 'preferences' => 'Job Preferences'];
+    private const TABS = ['personal' => 'Personal', 'photograph' => 'Photograph', 'contact' => 'Contact & Address', 'education' => 'Education', 'experience' => 'Experience', 'skills' => 'Skills & Languages', 'preferences' => 'Job Preferences'];
 
     public function edit(Request $request, string $tab = 'personal'): View
     {
         abort_unless(isset(self::TABS[$tab]), 404);
         $profile = $request->user()->candidateProfile()->firstOrCreate([], ['profile_code' => 'CAN-'.str_pad((string) $request->user()->id, 7, '0', STR_PAD_LEFT)]);
-        $profile->load(['educations', 'experiences', 'skills', 'languages', 'employmentTypes', 'workModes']);
+        $profile->load(['educations.subjects', 'educations.qualificationLevel', 'experiences', 'skills', 'languages', 'employmentTypes', 'workModes']);
 
         return view('talent.profile.edit', ['profile' => $profile, 'tab' => $tab, 'tabs' => self::TABS] + $this->masters());
     }
@@ -63,11 +69,45 @@ class CandidateProfileController extends Controller
 
     public function education(Request $request): RedirectResponse
     {
-        $data = $request->validate(['qualification_level_id' => ['required', 'exists:qualification_levels,id'], 'degree_name' => ['required', 'string', 'max:150'], 'specialization' => ['nullable', 'string', 'max:150'], 'institution_name' => ['required', 'string', 'max:200'], 'board_university' => ['nullable', 'string', 'max:200'], 'country_id' => ['nullable', 'exists:countries,id'], 'study_mode_id' => ['nullable', 'exists:study_modes,id'], 'start_year' => ['nullable', 'integer', 'between:1950,2100'], 'passing_year' => ['nullable', 'integer', 'between:1950,2100'], 'currently_studying' => ['nullable', 'boolean'], 'result' => ['nullable', 'string', 'max:50']]);
+        $data = $request->validate(['qualification_level_id' => ['required', 'exists:qualification_levels,id'], 'degree_id' => ['required', Rule::exists('degrees', 'id')->where(fn ($query) => $query->where('qualification_level_id', $request->input('qualification_level_id'))->where('is_active', true)->whereNull('deleted_at'))], 'specialization' => ['nullable', 'string', 'max:150'], 'educational_institution_id' => ['required', Rule::exists('educational_institutions', 'id')->where('is_active', true)->whereNull('deleted_at')], 'education_authority_id' => ['required', Rule::exists('education_authorities', 'id')->where('is_active', true)->whereNull('deleted_at')], 'country_id' => ['nullable', 'exists:countries,id'], 'study_mode_id' => ['nullable', 'exists:study_modes,id'], 'start_year' => ['nullable', 'integer', 'between:1950,2100'], 'passing_year' => ['nullable', 'integer', 'between:1950,2100'], 'currently_studying' => ['nullable', 'boolean'], 'result' => ['nullable', 'string', 'max:50'], 'subjects' => ['nullable', 'array', 'max:30'], 'subjects.*' => ['integer', 'distinct', 'exists:subjects,id']]);
+        $subjects = $data['subjects'] ?? [];
+        unset($data['subjects']);
+        $data['degree_name'] = Degree::findOrFail($data['degree_id'])->display_name;
+        $data['institution_name'] = EducationalInstitution::findOrFail($data['educational_institution_id'])->display_name;
+        $data['board_university'] = EducationAuthority::findOrFail($data['education_authority_id'])->display_name;
         $data['currently_studying'] = $request->boolean('currently_studying');
-        $request->user()->candidateProfile->educations()->create($data);
+        $education = $request->user()->candidateProfile->educations()->create($data);
+        $education->subjects()->sync($subjects);
 
         return back()->with('status', 'Education added.');
+    }
+
+    public function photograph(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120', 'dimensions:min_width=240,min_height=240,max_width=6000,max_height=6000'],
+        ], ['photo.dimensions' => 'Please use a photograph that is at least 240 × 240 pixels.']);
+        $profile = $request->user()->candidateProfile()->firstOrFail();
+        $extension = $validated['photo']->extension() ?: 'jpg';
+        $path = $validated['photo']->storeAs("candidates/{$profile->profile_code}/profile", 'photograph-'.now()->format('YmdHis').'.'.$extension, 'public');
+
+        if ($profile->photo_path && $profile->photo_path !== $path) {
+            Storage::disk('public')->delete($profile->photo_path);
+        }
+        $profile->update(['photo_path' => $path, 'photo_updated_at' => now()]);
+
+        return back()->with('status', 'Profile photograph saved.');
+    }
+
+    public function removePhotograph(Request $request): RedirectResponse
+    {
+        $profile = $request->user()->candidateProfile()->firstOrFail();
+        if ($profile->photo_path) {
+            Storage::disk('public')->delete($profile->photo_path);
+        }
+        $profile->update(['photo_path' => null, 'photo_updated_at' => null]);
+
+        return back()->with('status', 'Profile photograph removed.');
     }
 
     public function experience(Request $request): RedirectResponse
@@ -79,6 +119,24 @@ class CandidateProfileController extends Controller
         } $request->user()->candidateProfile->experiences()->create($data);
 
         return back()->with('status', 'Experience added.');
+    }
+
+    public function addEducationSubject(Request $request, int $education): JsonResponse
+    {
+        $data = $request->validate(['subject_id' => ['required', 'exists:subjects,id']]);
+        $record = $request->user()->candidateProfile->educations()->findOrFail($education);
+        $record->subjects()->syncWithoutDetaching([$data['subject_id']]);
+        $subject = Subject::findOrFail($data['subject_id']);
+
+        return response()->json(['subject' => ['id' => $subject->id, 'name' => $subject->display_name]]);
+    }
+
+    public function removeEducationSubject(Request $request, int $education, int $subject): JsonResponse
+    {
+        $record = $request->user()->candidateProfile->educations()->findOrFail($education);
+        $record->subjects()->detach($subject);
+
+        return response()->json(['removed' => true]);
     }
 
     public function skill(Request $request): RedirectResponse
@@ -109,6 +167,6 @@ class CandidateProfileController extends Controller
 
     private function masters(): array
     {
-        return ['countries' => Country::available()->get(), 'genders' => Gender::available()->get(), 'maritalStatuses' => MaritalStatus::available()->get(), 'qualificationLevels' => QualificationLevel::available()->get(), 'studyModes' => StudyMode::available()->get(), 'employmentTypes' => EmploymentType::available()->get(), 'workModes' => WorkMode::available()->get(), 'skills' => Skill::available()->get(), 'languages' => Language::available()->get(), 'proficiencyLevels' => ProficiencyLevel::available()->get()];
+        return ['countries' => Country::available()->get(), 'genders' => Gender::available()->get(), 'maritalStatuses' => MaritalStatus::available()->get(), 'qualificationLevels' => QualificationLevel::available()->get(), 'degrees' => Degree::available()->get(), 'educationalInstitutions' => EducationalInstitution::available()->get(), 'educationAuthorities' => EducationAuthority::available()->get(), 'studyModes' => StudyMode::available()->get(), 'employmentTypes' => EmploymentType::available()->get(), 'workModes' => WorkMode::available()->get(), 'skills' => Skill::available()->get(), 'subjects' => Subject::available()->get(), 'languages' => Language::available()->get(), 'proficiencyLevels' => ProficiencyLevel::available()->get()];
     }
 }

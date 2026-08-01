@@ -23,6 +23,7 @@ class SharedMasterController extends Controller
             'selectedKey' => $key,
             'selectedType' => $type,
             'records' => $model::query()->orderBy('sort_order')->orderBy('display_name')->get(),
+            'parentOptions' => isset($type['parent']) ? $type['parent']['model']::available()->get() : collect(),
         ]);
     }
 
@@ -30,7 +31,7 @@ class SharedMasterController extends Controller
     {
         $definition = SharedMasterRegistry::get($type);
         $model = $definition['model'];
-        $model::create($this->validated($request, new $model));
+        $model::create($this->validated($request, new $model, $definition));
 
         return $this->backTo($type, $definition['label'].' entry created.');
     }
@@ -39,7 +40,7 @@ class SharedMasterController extends Controller
     {
         $definition = SharedMasterRegistry::get($type);
         $item = $this->record($definition['model'], $record);
-        $item->update($this->validated($request, $item));
+        $item->update($this->validated($request, $item, $definition));
 
         return $this->backTo($type, $definition['label'].' entry updated.');
     }
@@ -52,16 +53,21 @@ class SharedMasterController extends Controller
         return $this->backTo($type, 'Entry archived. Existing historical references remain safe.');
     }
 
-    private function validated(Request $request, SharedMaster $record): array
+    private function validated(Request $request, SharedMaster $record, array $definition): array
     {
-        $data = $request->validate([
+        $rules = [
             'code' => ['required', 'string', 'max:40', 'regex:/^[A-Z0-9_\-]+$/', Rule::unique($record->getTable(), 'code')->ignore($record->getKey())],
             'short_name' => ['nullable', 'string', 'max:80'],
             'display_name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:1000'],
             'sort_order' => ['required', 'integer', 'min:0', 'max:99999'],
             'is_active' => ['nullable', 'boolean'],
-        ]);
+        ];
+        if (isset($definition['parent'])) {
+            $parentModel = $definition['parent']['model'];
+            $rules[$definition['parent']['field']] = ['required', 'integer', 'exists:'.(new $parentModel)->getTable().',id'];
+        }
+        $data = $request->validate($rules);
         $data['is_active'] = $request->boolean('is_active');
         $data['code'] = strtoupper($data['code']);
 

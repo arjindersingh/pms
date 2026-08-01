@@ -117,5 +117,6 @@
     </main>
 
     <footer class="landing-footer py-5"><div class="container"><div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"><a class="brand text-decoration-none text-white" href="#"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span><span>PlaceFlow</span></a><p class="text-white-50 small mb-0">© {{ date('Y') }} PlaceFlow. Make your next move matter.</p><a class="text-white-50 text-decoration-none small" href="{{ route('login') }}">Member sign in <i class="bi bi-arrow-right ms-1"></i></a></div></div></footer>
+    <x-system-compatibility />
 </body>
 </html>

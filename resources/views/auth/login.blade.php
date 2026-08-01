@@ -48,5 +48,6 @@
             </div>
         </div>
     </main>
+    <x-system-compatibility />
 </body>
 </html>

@@ -76,7 +76,11 @@ Route::middleware(['auth', 'category:talent', 'module:career'])->prefix('talent'
         ->middleware('menu:talent-dashboard,view')->name('dashboard');
     Route::get('/profile/{tab?}', [CandidateProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/{tab}', [CandidateProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/photograph', [CandidateProfileController::class, 'photograph'])->name('profile.photograph');
+    Route::delete('/profile/photograph', [CandidateProfileController::class, 'removePhotograph'])->name('profile.photograph.remove');
     Route::post('/profile/entries/education', [CandidateProfileController::class, 'education'])->name('profile.education');
+    Route::post('/profile/entries/education/{education}/subjects', [CandidateProfileController::class, 'addEducationSubject'])->name('profile.education.subjects.store');
+    Route::delete('/profile/entries/education/{education}/subjects/{subject}', [CandidateProfileController::class, 'removeEducationSubject'])->name('profile.education.subjects.destroy');
     Route::post('/profile/entries/experience', [CandidateProfileController::class, 'experience'])->name('profile.experience');
     Route::post('/profile/entries/skill', [CandidateProfileController::class, 'skill'])->name('profile.skill');
     Route::post('/profile/entries/language', [CandidateProfileController::class, 'language'])->name('profile.language');

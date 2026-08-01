@@ -41,7 +41,9 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            // Root-relative URLs keep uploads on the current host when the app
+            // is reached through a forwarded port or deployment proxy.
+            'url' => '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

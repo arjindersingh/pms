@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\EducationalInstitution;
 use App\Models\QualificationLevel;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -23,6 +24,21 @@ class SharedMastersTest extends TestCase
         $this->assertSame(13, QualificationLevel::count());
         $this->assertDatabaseHas('qualification_levels', ['code' => 'UG', 'display_name' => 'Graduation / Bachelor’s']);
         $this->assertDatabaseHas('qualification_levels', ['code' => 'POST_DOC', 'display_name' => 'Postdoctoral Research']);
+    }
+
+    public function test_dropdown_master_values_are_alphabetical_with_other_entries_last(): void
+    {
+        $qualificationLevels = QualificationLevel::available()->pluck('display_name');
+        $regularQualificationLevels = $qualificationLevels->reject(fn (string $name) => str_starts_with(strtolower($name), 'other'));
+
+        $this->assertSame(
+            $regularQualificationLevels->sort(SORT_NATURAL | SORT_FLAG_CASE)->values()->all(),
+            $regularQualificationLevels->values()->all(),
+        );
+        $this->assertSame('Other Qualification', $qualificationLevels->last());
+
+        $institutions = EducationalInstitution::available()->pluck('display_name');
+        $this->assertSame('Other / Institution not listed', $institutions->last());
     }
 
     public function test_administrator_can_manage_shared_master_values(): void

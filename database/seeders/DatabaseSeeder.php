@@ -5,7 +5,10 @@ namespace Database\Seeders;
 use App\Enums\UserCategory;
 use App\Models\AcademicClass;
 use App\Models\Country;
+use App\Models\Degree;
 use App\Models\District;
+use App\Models\EducationalInstitution;
+use App\Models\EducationAuthority;
 use App\Models\EmploymentType;
 use App\Models\Gender;
 use App\Models\Language;
@@ -18,6 +21,7 @@ use App\Models\SharedMaster;
 use App\Models\Skill;
 use App\Models\State;
 use App\Models\StudyMode;
+use App\Models\Subject;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Models\UserType;
@@ -140,6 +144,7 @@ class DatabaseSeeder extends Seeder
             ['DIP', 'Diploma'], ['ADV_DIP', 'Advanced Diploma'], ['UG', 'Graduation / Bachelor’s'], ['PG_DIP', 'Postgraduate Diploma'],
             ['PG', 'Postgraduation / Master’s'], ['MPHIL', 'M.Phil.'], ['DOC', 'Doctorate / Ph.D.'], ['POST_DOC', 'Postdoctoral Research'], ['OTHER', 'Other Qualification'],
         ]);
+        $this->seedDegrees();
         $this->masterRecords(Gender::class, [['MALE', 'Male'], ['FEMALE', 'Female'], ['NON_BINARY', 'Non-binary'], ['UNDISCLOSED', 'Prefer not to disclose']]);
         $this->masterRecords(MaritalStatus::class, [['SINGLE', 'Single'], ['MARRIED', 'Married'], ['DIVORCED', 'Divorced'], ['WIDOWED', 'Widowed']]);
         $this->masterRecords(AcademicClass::class, [['CLASS_8', 'Class 8'], ['CLASS_10', 'Class 10'], ['CLASS_12', 'Class 12']]);
@@ -150,6 +155,9 @@ class DatabaseSeeder extends Seeder
         $this->masterRecords(WorkMode::class, [['ONSITE', 'On-site'], ['REMOTE', 'Remote'], ['HYBRID', 'Hybrid'], ['FIELD', 'Field-based']]);
         $this->masterRecords(ProficiencyLevel::class, [['BASIC', 'Basic'], ['CONVERSATIONAL', 'Conversational'], ['WORKING', 'Working proficiency'], ['PROFESSIONAL', 'Professional proficiency'], ['FLUENT', 'Fluent'], ['NATIVE', 'Native / Bilingual']]);
         $this->masterRecords(Skill::class, [['COMMUNICATION', 'Communication'], ['LEADERSHIP', 'Leadership'], ['TEAMWORK', 'Teamwork'], ['MS_OFFICE', 'Microsoft Office'], ['EXCEL', 'Microsoft Excel'], ['PHP', 'PHP'], ['LARAVEL', 'Laravel'], ['JAVASCRIPT', 'JavaScript'], ['PYTHON', 'Python'], ['SQL', 'SQL'], ['MARKETING', 'Marketing'], ['SALES', 'Sales'], ['ACCOUNTING', 'Accounting'], ['TEACHING', 'Teaching']]);
+        $this->masterRecords(Subject::class, [['ENGLISH', 'English'], ['HINDI', 'Hindi'], ['PUNJABI', 'Punjabi'], ['MATHEMATICS', 'Mathematics'], ['PHYSICS', 'Physics'], ['CHEMISTRY', 'Chemistry'], ['BIOLOGY', 'Biology'], ['COMPUTER_SCIENCE', 'Computer Science'], ['INFORMATICS', 'Informatics Practices'], ['ECONOMICS', 'Economics'], ['ACCOUNTANCY', 'Accountancy'], ['BUSINESS_STUDIES', 'Business Studies'], ['HISTORY', 'History'], ['GEOGRAPHY', 'Geography'], ['POLITICAL_SCIENCE', 'Political Science'], ['SOCIOLOGY', 'Sociology'], ['PSYCHOLOGY', 'Psychology'], ['ENVIRONMENTAL_SCIENCE', 'Environmental Science'], ['ENGINEERING', 'Engineering'], ['MANAGEMENT', 'Management']]);
+        $this->masterRecords(EducationalInstitution::class, [['OTHER_INSTITUTION', 'Other / Institution not listed'], ['GOVT_SCHOOL', 'Government School'], ['KENDRIYA_VIDYALAYA', 'Kendriya Vidyalaya'], ['JAWAHAR_NAVODAYA', 'Jawahar Navodaya Vidyalaya'], ['GOVT_COLLEGE', 'Government College'], ['DAV_COLLEGE', 'DAV College'], ['KHALSA_COLLEGE', 'Khalsa College'], ['GNDU_CAMPUS', 'Guru Nanak Dev University Campus'], ['PUNJABI_UNIVERSITY_CAMPUS', 'Punjabi University Campus'], ['PANJAB_UNIVERSITY_CAMPUS', 'Panjab University Campus'], ['IIT_ROPAR', 'Indian Institute of Technology Ropar'], ['NIT_JALANDHAR', 'Dr. B. R. Ambedkar National Institute of Technology Jalandhar'], ['THAPAR', 'Thapar Institute of Engineering and Technology'], ['LPU', 'Lovely Professional University'], ['CHANDIGARH_UNIVERSITY', 'Chandigarh University']]);
+        $this->seedEducationAuthorities();
         $this->seedIndianGeography();
     }
 
@@ -163,6 +171,45 @@ class DatabaseSeeder extends Seeder
         $punjab = State::where('country_id', $india->id)->where('code', 'PB')->firstOrFail();
         foreach (['Amritsar', 'Barnala', 'Bathinda', 'Faridkot', 'Fatehgarh Sahib', 'Fazilka', 'Ferozepur', 'Gurdaspur', 'Hoshiarpur', 'Jalandhar', 'Kapurthala', 'Ludhiana', 'Malerkotla', 'Mansa', 'Moga', 'Pathankot', 'Patiala', 'Rupnagar', 'Sahibzada Ajit Singh Nagar', 'Sangrur', 'Shaheed Bhagat Singh Nagar', 'Sri Muktsar Sahib', 'Tarn Taran'] as $i => $name) {
             District::updateOrCreate(['state_id' => $punjab->id, 'code' => strtoupper(str_replace(' ', '_', $name))], ['display_name' => $name, 'short_name' => $name, 'sort_order' => ($i + 1) * 10, 'is_active' => true]);
+        }
+    }
+
+    private function seedDegrees(): void
+    {
+        $records = [
+            'SEC' => [['MATRIC', 'Matric / Class 10']],
+            'SR_SEC' => [['CLASS_12', 'Senior Secondary / Class 12']],
+            'CERT' => [['CERT_GENERAL', 'Certificate Course'], ['CERT_COMPUTER', 'Computer Certificate'], ['CERT_LANGUAGE', 'Language Certificate']],
+            'ITI' => [['ITI_ELECTRICIAN', 'ITI Electrician'], ['ITI_FITTER', 'ITI Fitter'], ['ITI_COPA', 'ITI COPA'], ['ITI_WELDER', 'ITI Welder'], ['ITI_MECHANIC', 'ITI Mechanic'], ['ITI_PLUMBER', 'ITI Plumber'], ['ITI_DRAUGHTSMAN', 'ITI Draughtsman']],
+            'DIP' => [['DIP_ENGINEERING', 'Diploma in Engineering'], ['DIP_COMPUTER', 'Diploma in Computer Applications'], ['DIP_EDUCATION', 'Diploma in Education'], ['DIP_NURSING', 'Diploma in Nursing'], ['DIP_PHARMACY', 'Diploma in Pharmacy'], ['DIP_MANAGEMENT', 'Diploma in Management']],
+            'ADV_DIP' => [['ADV_DIP_ENGINEERING', 'Advanced Diploma in Engineering'], ['ADV_DIP_COMPUTER', 'Advanced Diploma in Computer Applications'], ['ADV_DIP_MANAGEMENT', 'Advanced Diploma in Management']],
+            'UG' => [['BA', 'Bachelor of Arts (B.A.)'], ['BSC', 'Bachelor of Science (B.Sc.)'], ['BCOM', 'Bachelor of Commerce (B.Com.)'], ['BBA', 'Bachelor of Business Administration (BBA)'], ['BCA', 'Bachelor of Computer Applications (BCA)'], ['BTECH', 'Bachelor of Technology (B.Tech.)'], ['BE', 'Bachelor of Engineering (B.E.)'], ['BED', 'Bachelor of Education (B.Ed.)'], ['LLB', 'Bachelor of Laws (LL.B.)'], ['BPHARM', 'Bachelor of Pharmacy (B.Pharm.)'], ['BARCH', 'Bachelor of Architecture (B.Arch.)'], ['BDS', 'Bachelor of Dental Surgery (BDS)'], ['MBBS', 'Bachelor of Medicine and Surgery (MBBS)'], ['BSC_NURSING', 'B.Sc. Nursing'], ['BSW', 'Bachelor of Social Work (BSW)'], ['BFA', 'Bachelor of Fine Arts (BFA)'], ['BVOC', 'Bachelor of Vocation (B.Voc.)']],
+            'PG_DIP' => [['PGDCA', 'Postgraduate Diploma in Computer Applications (PGDCA)'], ['PGDM', 'Postgraduate Diploma in Management (PGDM)'], ['PGD_GENERAL', 'Postgraduate Diploma']],
+            'PG' => [['MA', 'Master of Arts (M.A.)'], ['MSC', 'Master of Science (M.Sc.)'], ['MCOM', 'Master of Commerce (M.Com.)'], ['MBA', 'Master of Business Administration (MBA)'], ['MCA', 'Master of Computer Applications (MCA)'], ['MTECH', 'Master of Technology (M.Tech.)'], ['ME', 'Master of Engineering (M.E.)'], ['MED', 'Master of Education (M.Ed.)'], ['LLM', 'Master of Laws (LL.M.)'], ['MPHARM', 'Master of Pharmacy (M.Pharm.)'], ['MSW', 'Master of Social Work (MSW)'], ['MARCH', 'Master of Architecture (M.Arch.)'], ['MPH', 'Master of Public Health (MPH)'], ['MFA', 'Master of Fine Arts (MFA)']],
+            'MPHIL' => [['MPHIL_GENERAL', 'Master of Philosophy (M.Phil.)']],
+            'DOC' => [['PHD', 'Doctor of Philosophy (Ph.D.)'], ['EDD', 'Doctor of Education (Ed.D.)'], ['DBA', 'Doctor of Business Administration (DBA)']],
+            'POST_DOC' => [['POSTDOC_FELLOWSHIP', 'Postdoctoral Fellowship / Research']],
+            'OTHER' => [['OTHER_COURSE', 'Other Qualification / Course']],
+        ];
+        foreach ($records as $levelCode => $degrees) {
+            $level = QualificationLevel::where('code', $levelCode)->firstOrFail();
+            foreach ($degrees as $position => [$code, $name]) {
+                Degree::withTrashed()->updateOrCreate(['code' => $code], ['qualification_level_id' => $level->id, 'short_name' => $name, 'display_name' => $name, 'sort_order' => ($position + 1) * 10, 'is_active' => true, 'deleted_at' => null]);
+            }
+        }
+    }
+
+    private function seedEducationAuthorities(): void
+    {
+        $groups = [
+            'board' => [['CBSE', 'Central Board of Secondary Education (CBSE)'], ['CISCE', 'Council for the Indian School Certificate Examinations (CISCE)'], ['NIOS', 'National Institute of Open Schooling (NIOS)'], ['PSEB', 'Punjab School Education Board (PSEB)'], ['HBSE', 'Board of School Education Haryana'], ['HPBOSE', 'Himachal Pradesh Board of School Education'], ['UPMSP', 'Uttar Pradesh Madhyamik Shiksha Parishad'], ['RBSE', 'Board of Secondary Education Rajasthan']],
+            'university' => [['GNDU', 'Guru Nanak Dev University'], ['PUNJABI_UNIVERSITY', 'Punjabi University'], ['PANJAB_UNIVERSITY', 'Panjab University'], ['PTU', 'I.K. Gujral Punjab Technical University'], ['BFUHS', 'Baba Farid University of Health Sciences'], ['PSBTE', 'Punjab State Board of Technical Education and Industrial Training'], ['IGNOU', 'Indira Gandhi National Open University'], ['DU', 'University of Delhi'], ['JNU', 'Jawaharlal Nehru University'], ['UGC_RECOGNIZED', 'Other UGC Recognized University'], ['OTHER_AUTHORITY', 'Other Board / University']],
+        ];
+        $position = 0;
+        foreach ($groups as $type => $records) {
+            foreach ($records as [$code, $name]) {
+                EducationAuthority::withTrashed()->updateOrCreate(['code' => $code], ['authority_type' => $type, 'short_name' => $code, 'display_name' => $name, 'sort_order' => (++$position) * 10, 'is_active' => true, 'deleted_at' => null]);
+            }
         }
     }
 

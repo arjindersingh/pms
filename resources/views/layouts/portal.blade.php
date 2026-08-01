@@ -46,5 +46,6 @@
         @endif
         @include('portal.footer')
     </div>
+    <x-system-compatibility />
 </body>
 </html>

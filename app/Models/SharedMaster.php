@@ -19,6 +19,9 @@ abstract class SharedMaster extends Model
 
     public function scopeAvailable(Builder $query): Builder
     {
-        return $query->where('is_active', true)->orderBy('sort_order')->orderBy('display_name');
+        return $query
+            ->where('is_active', true)
+            ->orderByRaw("CASE WHEN UPPER(code) LIKE 'OTHER%' OR LOWER(display_name) LIKE 'other%' THEN 1 ELSE 0 END")
+            ->orderBy('display_name');
     }
 }

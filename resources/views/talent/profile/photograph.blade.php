@@ -1,0 +1,13 @@
+<section class="dashboard-card photo-workspace" data-photo-capture>
+    <div class="photo-current"><span class="dashboard-kicker">CURRENT PHOTOGRAPH</span><div class="photo-preview-frame">
+        @if($profile->photo_path)<img data-photo-preview src="{{ Storage::disk('public')->url($profile->photo_path) }}" alt="Current profile photograph">@else<div class="photo-placeholder" data-photo-placeholder><i class="bi bi-person-bounding-box"></i><span>No photograph added</span></div><img data-photo-preview alt="Photograph preview" hidden>@endif
+    </div>@if($profile->photo_updated_at)<small>Updated {{ $profile->photo_updated_at->diffForHumans() }}</small>@endif
+    @if($profile->photo_path)<form method="POST" action="{{ route('talent.profile.photograph.remove') }}" onsubmit="return confirm('Remove your profile photograph?')">@csrf @method('DELETE')<button class="btn btn-outline-danger btn-sm mt-3"><i class="bi bi-trash"></i>Remove photograph</button></form>@endif</div>
+    <div class="photo-actions"><div><span class="dashboard-kicker">ADD OR REPLACE</span><h2>Choose a clear profile photograph</h2><p>Use a recent, front-facing photograph with good lighting and a simple background.</p></div>
+        <form method="POST" action="{{ route('talent.profile.photograph') }}" enctype="multipart/form-data">@csrf<input class="visually-hidden" data-photo-input id="profile-photo" type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
+            <div class="photo-action-buttons"><label class="btn btn-portal" for="profile-photo"><i class="bi bi-upload"></i>Upload photograph</label><button class="btn btn-portal-soft" data-camera-start type="button"><i class="bi bi-camera"></i>Use camera</button></div>
+            <div class="camera-panel" data-camera-panel hidden><video data-camera-video autoplay playsinline muted></video><canvas data-camera-canvas hidden></canvas><div><button class="btn btn-portal" data-camera-capture type="button"><i class="bi bi-camera-fill"></i>Take photograph</button><button class="btn btn-outline-secondary" data-camera-cancel type="button">Cancel</button></div><small>Your browser will ask for camera permission. The image is only uploaded when you save.</small></div>
+            <div class="photo-file-status" data-photo-status>No new photograph selected.</div><button class="btn btn-portal mt-3" data-photo-save type="submit" disabled><i class="bi bi-check-lg"></i>Save photograph</button>
+        </form><div class="photo-guidance"><span><i class="bi bi-check-circle"></i>JPG, PNG, or WebP</span><span><i class="bi bi-check-circle"></i>At least 240 × 240 px</span><span><i class="bi bi-check-circle"></i>Maximum 5 MB</span></div>
+    </div>
+</section>

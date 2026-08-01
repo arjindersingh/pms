@@ -13,7 +13,7 @@ class CandidateProfile extends Model
 
     protected function casts(): array
     {
-        return ['date_of_birth' => 'date', 'available_from' => 'date', 'email_allowed' => 'boolean', 'sms_allowed' => 'boolean', 'whatsapp_allowed' => 'boolean', 'job_alerts_allowed' => 'boolean', 'is_public' => 'boolean', 'willing_to_relocate' => 'boolean', 'willing_to_travel' => 'boolean'];
+        return ['date_of_birth' => 'date', 'available_from' => 'date', 'photo_updated_at' => 'datetime', 'email_allowed' => 'boolean', 'sms_allowed' => 'boolean', 'whatsapp_allowed' => 'boolean', 'job_alerts_allowed' => 'boolean', 'is_public' => 'boolean', 'willing_to_relocate' => 'boolean', 'willing_to_travel' => 'boolean'];
     }
 
     public function user(): BelongsTo
