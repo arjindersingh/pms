@@ -9,6 +9,7 @@ use App\Models\State;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class CandidateProfileTest extends TestCase
@@ -51,6 +52,21 @@ class CandidateProfileTest extends TestCase
         $this->assertDatabaseHas('portal_menus', [
             'slug' => 'candidate-profile',
             'route_name' => 'talent.profile.edit',
+        ]);
+    }
+
+    public function test_reseeding_backfills_new_menu_permissions_for_existing_candidates(): void
+    {
+        $candidate = User::where('email', 'talent@example.com')->firstOrFail();
+        $menuId = DB::table('portal_menus')->where('slug', 'candidate-profile')->value('id');
+        DB::table('portal_menu_user')->where('user_id', $candidate->id)->where('portal_menu_id', $menuId)->delete();
+
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertDatabaseHas('portal_menu_user', [
+            'user_id' => $candidate->id,
+            'portal_menu_id' => $menuId,
+            'can_view' => true,
         ]);
     }
 

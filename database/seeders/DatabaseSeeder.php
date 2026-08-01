@@ -24,6 +24,7 @@ use App\Models\UserType;
 use App\Models\WorkMode;
 use App\Services\RolePermissionService;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -126,6 +127,8 @@ class DatabaseSeeder extends Seeder
         $assign->assign($this->user('Agency Recruiter', 'agency@example.com', $staffingAgency), $recruiterRoles['recruiter'], null, false);
         $assign->assign($this->user('Demo Talent', 'talent@example.com', $graduate), $candidateRoles['candidate'], null, false);
         $assign->assign($this->user('Experienced Candidate', 'candidate@example.com', $experienced), $candidateRoles['candidate'], null, false);
+
+        $this->backfillMissingRolePermissions();
 
         $this->seedSharedMasters();
     }
@@ -242,6 +245,27 @@ class DatabaseSeeder extends Seeder
         foreach ($menus as $menu) {
             $role->menus()->syncWithoutDetaching([$menu->id => ['can_view' => true, 'can_create' => $manage, 'can_update' => $manage, 'can_delete' => $manage]]);
         }
+    }
+
+    /** Add newly introduced role permissions without replacing user customizations. */
+    private function backfillMissingRolePermissions(): void
+    {
+        User::query()->whereNotNull('user_role_id')->whereNull('permissions_customized_at')->each(function (User $user): void {
+            foreach (DB::table('portal_module_user_role')->where('user_role_id', $user->user_role_id)->get() as $permission) {
+                DB::table('portal_module_user')->insertOrIgnore([
+                    'user_id' => $user->id, 'portal_module_id' => $permission->portal_module_id,
+                    'enabled' => $permission->enabled, 'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
+            foreach (DB::table('portal_menu_user_role')->where('user_role_id', $user->user_role_id)->get() as $permission) {
+                DB::table('portal_menu_user')->insertOrIgnore([
+                    'user_id' => $user->id, 'portal_menu_id' => $permission->portal_menu_id,
+                    'can_view' => $permission->can_view, 'can_create' => $permission->can_create,
+                    'can_update' => $permission->can_update, 'can_delete' => $permission->can_delete,
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
+        });
     }
 
     private function user(string $name, string $email, UserType $type): User
