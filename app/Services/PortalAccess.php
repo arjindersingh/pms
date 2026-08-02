@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
+use App\Enums\UserCategory;
 use App\Models\PortalMenu;
 use App\Models\PortalModule;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use App\Enums\UserCategory;
 
 class PortalAccess
 {
@@ -21,10 +21,13 @@ class PortalAccess
             return false;
         }
 
-        if ($user->isSuperAdmin()) return true;
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
 
         if ($user->user_role_id) {
             $assignment = DB::table('portal_module_user_role')->where('portal_module_id', $module->id)->where('user_role_id', $user->user_role_id)->first();
+
             return (bool) ($assignment?->enabled ?? false);
         }
 
@@ -60,17 +63,27 @@ class PortalAccess
             return false;
         }
 
-        if ($user->isSuperAdmin()) return true;
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
+        if ($menu->slug === 'subscription-details' && $user->userType?->category === UserCategory::Talent) {
+            return true;
+        }
 
         if (in_array($user->userType?->category, [UserCategory::Recruiter, UserCategory::Talent], true)) {
             $subscription = $user->activeSubscription()->with('plan')->first();
-            if (! $subscription?->plan?->is_active || $subscription->plan->category !== $user->userType->category) return false;
+            if (! $subscription?->plan?->is_active || $subscription->plan->category !== $user->userType->category) {
+                return false;
+            }
             $assignment = DB::table('portal_menu_subscription_plan')->where('portal_menu_id', $menu->id)->where('subscription_plan_id', $subscription->subscription_plan_id)->first();
+
             return (bool) ($assignment?->{$column} ?? false);
         }
 
         if ($user->user_role_id) {
             $assignment = DB::table('portal_menu_user_role')->where('portal_menu_id', $menu->id)->where('user_role_id', $user->user_role_id)->first();
+
             return (bool) ($assignment?->{$column} ?? false);
         }
 

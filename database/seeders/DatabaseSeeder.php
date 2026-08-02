@@ -4,28 +4,40 @@ namespace Database\Seeders;
 
 use App\Enums\UserCategory;
 use App\Models\AcademicClass;
+use App\Models\ConsentType;
 use App\Models\Country;
+use App\Models\DeclarationType;
 use App\Models\Degree;
 use App\Models\District;
 use App\Models\EducationalInstitution;
 use App\Models\EducationAuthority;
 use App\Models\EmploymentType;
 use App\Models\Gender;
+use App\Models\Hobby;
+use App\Models\HobbyCategory;
+use App\Models\InterestLevel;
 use App\Models\Language;
 use App\Models\MaritalStatus;
 use App\Models\PortalMenu;
 use App\Models\PortalModule;
 use App\Models\ProficiencyLevel;
+use App\Models\ProjectType;
 use App\Models\QualificationLevel;
+use App\Models\RecognitionLevel;
+use App\Models\ReferenceType;
 use App\Models\SharedMaster;
 use App\Models\Skill;
+use App\Models\SkillGroup;
+use App\Models\SocialPlatform;
 use App\Models\State;
 use App\Models\StudyMode;
 use App\Models\Subject;
+use App\Models\SubscriptionPlan;
+use App\Models\Talent;
+use App\Models\TalentCategory;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Models\UserType;
-use App\Models\SubscriptionPlan;
 use App\Models\WorkMode;
 use App\Services\RolePermissionService;
 use Illuminate\Database\Seeder;
@@ -95,6 +107,7 @@ class DatabaseSeeder extends Seeder
             $talentDashboard, $careerWorkspace, $opportunities, $applications,
             $this->menu($career, 'Job Preferences', 'job-preferences', 'talent.job-preferences.edit', 'bi-sliders2', 15, $careerWorkspace),
             $this->menu($career, 'Candidate Profile', 'candidate-profile', 'talent.profile.edit', 'bi-person-vcard', 10, $careerWorkspace),
+            $this->menu($career, 'Subscription', 'subscription-details', 'talent.subscription.show', 'bi-credit-card', 30, $careerWorkspace),
             $this->menu($career, 'Recommended Jobs', 'find-jobs', null, 'bi-stars', 10, $opportunities),
             $this->menu($career, 'Saved Jobs', 'saved-jobs', null, 'bi-bookmark-heart', 20, $opportunities),
             $this->menu($career, 'Active Applications', 'my-applications', null, 'bi-hourglass-split', 10, $applications),
@@ -164,6 +177,68 @@ class DatabaseSeeder extends Seeder
         $this->masterRecords(WorkMode::class, [['ONSITE', 'On-site'], ['REMOTE', 'Remote'], ['HYBRID', 'Hybrid'], ['FIELD', 'Field-based']]);
         $this->masterRecords(ProficiencyLevel::class, [['BASIC', 'Basic'], ['CONVERSATIONAL', 'Conversational'], ['WORKING', 'Working proficiency'], ['PROFESSIONAL', 'Professional proficiency'], ['FLUENT', 'Fluent'], ['NATIVE', 'Native / Bilingual']]);
         $this->masterRecords(Skill::class, [['COMMUNICATION', 'Communication'], ['LEADERSHIP', 'Leadership'], ['TEAMWORK', 'Teamwork'], ['MS_OFFICE', 'Microsoft Office'], ['EXCEL', 'Microsoft Excel'], ['PHP', 'PHP'], ['LARAVEL', 'Laravel'], ['JAVASCRIPT', 'JavaScript'], ['PYTHON', 'Python'], ['SQL', 'SQL'], ['MARKETING', 'Marketing'], ['SALES', 'Sales'], ['ACCOUNTING', 'Accounting'], ['TEACHING', 'Teaching']]);
+        $this->masterRecords(SkillGroup::class, [
+            ['PROGRAMMING', 'Programming'], ['WEB_DEVELOPMENT', 'Web Development'], ['MOBILE_DEVELOPMENT', 'Mobile Development'],
+            ['DATABASE', 'Database'], ['NETWORKING', 'Networking'], ['CYBERSECURITY', 'Cybersecurity'],
+            ['ARTIFICIAL_INTELLIGENCE', 'Artificial Intelligence'], ['DATA_SCIENCE', 'Data Science'], ['CLOUD_COMPUTING', 'Cloud Computing'],
+            ['OFFICE_APPLICATIONS', 'Office Applications'], ['GRAPHIC_DESIGN', 'Graphic Design'], ['MULTIMEDIA', 'Multimedia'],
+            ['TEACHING', 'Teaching'], ['RESEARCH', 'Research'], ['FINANCE', 'Finance'], ['ACCOUNTING', 'Accounting'],
+            ['MANAGEMENT', 'Management'], ['HUMAN_RESOURCES', 'Human Resources'], ['MARKETING', 'Marketing'], ['SALES', 'Sales'],
+            ['COMMUNICATION', 'Communication'], ['LEADERSHIP', 'Leadership'], ['ANALYTICAL_SKILLS', 'Analytical Skills'],
+            ['TECHNICAL_SKILLS', 'Technical Skills'], ['SOFT_SKILLS', 'Soft Skills'], ['TRADE_SKILLS', 'Trade Skills'],
+        ]);
+        $this->masterRecords(ProjectType::class, [
+            ['ACADEMIC', 'Academic'], ['PROFESSIONAL', 'Professional'], ['PERSONAL', 'Personal'],
+            ['RESEARCH', 'Research'], ['CLIENT', 'Client'], ['OPEN_SOURCE', 'Open source'],
+            ['STARTUP', 'Startup'], ['SOCIAL_IMPACT', 'Social impact'], ['FINAL_YEAR_PROJECT', 'Final-year project'],
+        ]);
+        $this->masterRecords(RecognitionLevel::class, [
+            ['INSTITUTION', 'Institution'], ['DISTRICT', 'District'], ['STATE', 'State'], ['REGIONAL', 'Regional'],
+            ['NATIONAL', 'National'], ['INTERNATIONAL', 'International'], ['CORPORATE', 'Corporate'], ['PROFESSIONAL', 'Professional'],
+        ]);
+        $this->masterRecords(TalentCategory::class, [
+            ['PERFORMING_ARTS', 'Performing Arts'], ['COMMUNICATION', 'Communication'], ['VISUAL_CREATIVE_ARTS', 'Visual & Creative Arts'],
+            ['TECHNOLOGY', 'Technology'], ['SPORTS_FITNESS', 'Sports & Fitness'], ['MANAGEMENT', 'Management'],
+            ['CULINARY', 'Culinary Arts'], ['CRAFTS', 'Crafts'], ['OTHER', 'Other'],
+        ]);
+        $this->masterRecords(Talent::class, [
+            ['MUSIC', 'Music'], ['DANCE', 'Dance'], ['THEATRE', 'Theatre'], ['PUBLIC_SPEAKING', 'Public speaking'],
+            ['DEBATE', 'Debate'], ['PHOTOGRAPHY', 'Photography'], ['VIDEOGRAPHY', 'Videography'], ['WRITING', 'Writing'],
+            ['PAINTING', 'Painting'], ['ANCHORING', 'Anchoring'], ['CODING', 'Coding'], ['SPORTS', 'Sports'],
+            ['EVENT_MANAGEMENT', 'Event management'], ['COOKING', 'Cooking'], ['DESIGN', 'Design'], ['CRAFT', 'Craft'],
+        ]);
+        $this->masterRecords(HobbyCategory::class, [
+            ['LEARNING', 'Learning & Knowledge'], ['TRAVEL_OUTDOORS', 'Travel & Outdoors'], ['SPORTS_FITNESS', 'Sports & Fitness'],
+            ['CREATIVE', 'Creative Arts'], ['ENTERTAINMENT', 'Entertainment'], ['TECHNOLOGY', 'Technology'],
+            ['SOCIAL_COMMUNITY', 'Social & Community'], ['LIFESTYLE', 'Lifestyle'], ['OTHER', 'Other'],
+        ]);
+        $this->masterRecords(InterestLevel::class, [
+            ['CASUAL', 'Casual'], ['INTERESTED', 'Interested'], ['ENTHUSIAST', 'Enthusiast'], ['PASSIONATE', 'Passionate'],
+        ]);
+        $this->masterRecords(Hobby::class, [
+            ['READING', 'Reading'], ['TRAVELLING', 'Travelling'], ['SPORTS', 'Sports'], ['MUSIC', 'Music'],
+            ['MOVIES', 'Movies'], ['GARDENING', 'Gardening'], ['PHOTOGRAPHY', 'Photography'], ['COOKING', 'Cooking'],
+            ['BLOGGING', 'Blogging'], ['GAMING', 'Gaming'], ['VOLUNTEERING', 'Volunteering'], ['FITNESS', 'Fitness'],
+            ['ART', 'Art'], ['WRITING', 'Writing'],
+        ]);
+        $this->masterRecords(ReferenceType::class, [
+            ['ACADEMIC', 'Academic'], ['PROFESSIONAL', 'Professional'], ['PREVIOUS_EMPLOYER', 'Previous employer'],
+            ['SUPERVISOR', 'Supervisor'], ['MENTOR', 'Mentor'], ['PERSONAL', 'Personal'], ['CHARACTER_REFERENCE', 'Character reference'],
+        ]);
+        $this->masterRecords(SocialPlatform::class, [
+            ['LINKEDIN', 'LinkedIn'], ['GITHUB', 'GitHub'], ['GITLAB', 'GitLab'], ['BEHANCE', 'Behance'],
+            ['DRIBBBLE', 'Dribbble'], ['RESEARCHGATE', 'ResearchGate'], ['GOOGLE_SCHOLAR', 'Google Scholar'],
+            ['ORCID', 'ORCID'], ['STACK_OVERFLOW', 'Stack Overflow'], ['YOUTUBE', 'YouTube'],
+            ['PERSONAL_WEBSITE', 'Personal website'], ['PORTFOLIO_WEBSITE', 'Portfolio website'], ['OTHER', 'Other'],
+        ]);
+        $this->masterRecords(DeclarationType::class, [
+            ['INFORMATION_CORRECT', 'Information is correct'], ['DOCUMENTS_AUTHENTIC', 'Documents are authentic'],
+        ]);
+        $this->masterRecords(ConsentType::class, [
+            ['PRIVACY_POLICY', 'Privacy policy accepted'], ['TERMS_CONDITIONS', 'Terms and conditions accepted'],
+            ['RECRUITER_CONTACT', 'Recruiter contact allowed'], ['BACKGROUND_VERIFICATION', 'Background verification allowed'],
+            ['COMMISSION_POLICY', 'Commission policy accepted'], ['PLACEMENT_POLICY', 'Placement policy accepted'],
+        ]);
         $this->masterRecords(Subject::class, [['ENGLISH', 'English'], ['HINDI', 'Hindi'], ['PUNJABI', 'Punjabi'], ['MATHEMATICS', 'Mathematics'], ['PHYSICS', 'Physics'], ['CHEMISTRY', 'Chemistry'], ['BIOLOGY', 'Biology'], ['COMPUTER_SCIENCE', 'Computer Science'], ['INFORMATICS', 'Informatics Practices'], ['ECONOMICS', 'Economics'], ['ACCOUNTANCY', 'Accountancy'], ['BUSINESS_STUDIES', 'Business Studies'], ['HISTORY', 'History'], ['GEOGRAPHY', 'Geography'], ['POLITICAL_SCIENCE', 'Political Science'], ['SOCIOLOGY', 'Sociology'], ['PSYCHOLOGY', 'Psychology'], ['ENVIRONMENTAL_SCIENCE', 'Environmental Science'], ['ENGINEERING', 'Engineering'], ['MANAGEMENT', 'Management']]);
         $this->masterRecords(EducationalInstitution::class, [['OTHER_INSTITUTION', 'Other / Institution not listed'], ['GOVT_SCHOOL', 'Government School'], ['KENDRIYA_VIDYALAYA', 'Kendriya Vidyalaya'], ['JAWAHAR_NAVODAYA', 'Jawahar Navodaya Vidyalaya'], ['GOVT_COLLEGE', 'Government College'], ['DAV_COLLEGE', 'DAV College'], ['KHALSA_COLLEGE', 'Khalsa College'], ['GNDU_CAMPUS', 'Guru Nanak Dev University Campus'], ['PUNJABI_UNIVERSITY_CAMPUS', 'Punjabi University Campus'], ['PANJAB_UNIVERSITY_CAMPUS', 'Panjab University Campus'], ['IIT_ROPAR', 'Indian Institute of Technology Ropar'], ['NIT_JALANDHAR', 'Dr. B. R. Ambedkar National Institute of Technology Jalandhar'], ['THAPAR', 'Thapar Institute of Engineering and Technology'], ['LPU', 'Lovely Professional University'], ['CHANDIGARH_UNIVERSITY', 'Chandigarh University']]);
         $this->seedEducationAuthorities();
@@ -284,6 +359,7 @@ class DatabaseSeeder extends Seeder
             $plan->menus()->sync(collect($menus)->mapWithKeys(function (PortalMenu $menu, int $index) use ($plan, $limit) {
                 $enabled = $index < $limit || ($plan->slug === 'free' && $menu->route_name !== null);
                 $essential = in_array($menu->slug, ['job-preferences', 'candidate-search'], true);
+
                 return [$menu->id => ['can_view' => $enabled, 'can_create' => $enabled && ($plan->slug !== 'free' || $essential), 'can_update' => $enabled && ($plan->slug !== 'free' || $essential), 'can_delete' => $enabled && $plan->slug === 'full']];
             })->all());
         }

@@ -20,7 +20,15 @@
 </div><button class="btn btn-portal mt-4" type="submit"><i class="bi bi-check-lg"></i>Save {{ Str::lower($tabs[$tab]) }}</button></section></form>
 @elseif($tab==='education') @include('talent.profile.repeatable',['kind'=>'education','records'=>$profile->educations])
 @elseif($tab==='experience') @include('talent.profile.repeatable',['kind'=>'experience','records'=>$profile->experiences])
+@elseif($tab==='projects') @include('talent.profile.projects',['records'=>$profile->projects])
+@elseif($tab==='recognitions') @include('talent.profile.recognitions',['records'=>$profile->recognitions])
+@elseif($tab==='memberships') @include('talent.profile.memberships',['records'=>$profile->professionalMemberships])
+@elseif($tab==='references') @include('talent.profile.references',['records'=>$profile->references])
+@elseif($tab==='social') @include('talent.profile.social-profiles',['records'=>$profile->socialProfiles])
+@elseif($tab==='declarations') @include('talent.profile.declarations')
 @elseif($tab==='publications') @include('talent.profile.publications',['records'=>$profile->publications])
+@elseif($tab==='talents') @include('talent.profile.talents',['records'=>$profile->talents])
+@elseif($tab==='hobbies') @include('talent.profile.hobbies',['records'=>$profile->hobbies])
 @else @include('talent.profile.skills')
 @endif
 @endsection
