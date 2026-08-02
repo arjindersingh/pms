@@ -6,6 +6,7 @@ use App\Enums\UserAccountStatus;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Models\SubscriptionPlan;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,12 +38,13 @@ class AccountReviewController extends Controller
 
     public function show(int $user): View
     {
-        $account = User::withTrashed()->with(['userType', 'role', 'accountReviews.reviewer'])->findOrFail($user);
+        $account = User::withTrashed()->with(['userType', 'role', 'activeSubscription.plan', 'accountReviews.reviewer'])->findOrFail($user);
 
         $roles = UserRole::where('category', $account->userType->category)->where('is_active', true)
             ->when(! request()->user()->isSuperAdmin(), fn ($query) => $query->where('is_super_admin', false))->orderBy('name')->get();
 
-        return view('admin.accounts.show', ['account' => $account, 'statuses' => UserAccountStatus::cases(), 'roles' => $roles]);
+        $plans = SubscriptionPlan::where('category', $account->userType->category)->where('is_active', true)->orderBy('position')->get();
+        return view('admin.accounts.show', ['account' => $account, 'statuses' => UserAccountStatus::cases(), 'roles' => $roles, 'plans' => $plans]);
     }
 
     public function updateStatus(Request $request, int $user): RedirectResponse

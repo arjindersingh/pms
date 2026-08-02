@@ -6,6 +6,7 @@ use App\Enums\UserCategory;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Models\UserType;
+use App\Models\SubscriptionPlan;
 use App\Services\RolePermissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -74,6 +75,13 @@ class RegistrationController extends Controller
         };
         if ($defaultRoleSlug && ($role = UserRole::query()->where('slug', $defaultRoleSlug)->where('is_active', true)->first())) {
             app(RolePermissionService::class)->assign($user->load('userType'), $role);
+        }
+
+        if ($plan = SubscriptionPlan::query()->where('category', $category)->where('slug', 'free')->where('is_active', true)->first()) {
+            $user->subscriptions()->create([
+                'subscription_plan_id' => $plan->id, 'status' => 'active', 'starts_at' => now(),
+                'price' => $plan->price, 'currency' => $plan->currency, 'billing_period' => $plan->billing_period,
+            ]);
         }
 
         Auth::login($user);

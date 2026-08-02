@@ -44,9 +44,21 @@
         <section class="dashboard-card account-action-card position-static mt-4">
             <div class="card-heading"><div><span>ROLE & ACCESS</span><h2>{{ $account->role?->name ?? 'No role assigned' }}</h2></div></div>
             @if($account->isSuperAdmin())<div class="super-admin-note"><i class="bi bi-stars"></i><div><strong>Unrestricted access</strong><small>Super Admin permissions cannot be reduced.</small></div></div>
-            @else<form method="POST" action="{{ route('admin.accounts.role',$account->id) }}">@csrf @method('PUT')<label class="form-label" for="user_role_id">Assign {{ $account->userType->category->label() }} role</label><select class="form-select" id="user_role_id" name="user_role_id">@foreach($roles as $role)<option value="{{ $role->id }}" @selected($account->user_role_id === $role->id)>{{ $role->name }}</option>@endforeach</select><div class="form-text">Assignment resets individual permissions from the selected template.</div><button class="btn btn-portal-light w-100 mt-3" type="submit"><i class="bi bi-arrow-repeat"></i>Assign and copy template</button></form>@if($account->user_role_id)<a class="btn btn-portal w-100 mt-2" href="{{ route('admin.accounts.permissions',$account->id) }}"><i class="bi bi-sliders"></i>Edit individual permissions</a>@endif
+            @else<form method="POST" action="{{ route('admin.accounts.role',$account->id) }}">@csrf @method('PUT')<label class="form-label" for="user_role_id">Assign {{ $account->userType->category->label() }} role</label><select class="form-select" id="user_role_id" name="user_role_id">@foreach($roles as $role)<option value="{{ $role->id }}" @selected($account->user_role_id === $role->id)>{{ $role->name }}</option>@endforeach</select><div class="form-text">The role controls module access for this account.</div><button class="btn btn-portal-light w-100 mt-3" type="submit"><i class="bi bi-arrow-repeat"></i>Assign role</button></form>
             @endif
         </section>
+        @if(in_array($account->userType->category, [\App\Enums\UserCategory::Recruiter, \App\Enums\UserCategory::Talent], true))
+        <section class="dashboard-card account-action-card position-static mt-4">
+            <div class="card-heading"><div><span>SUBSCRIPTION</span><h2>{{ $account->activeSubscription?->plan?->name ?? 'No active plan' }}</h2></div>@if($account->activeSubscription)<span class="plan-state">Active</span>@endif</div>
+            @if($account->activeSubscription)<p class="text-secondary small">{{ $account->activeSubscription->currency }} {{ number_format((float)$account->activeSubscription->price, 2) }} · {{ Str::headline($account->activeSubscription->billing_period) }}@if($account->activeSubscription->ends_at) · Ends {{ $account->activeSubscription->ends_at->format('M j, Y') }}@endif</p>@endif
+            <form method="POST" action="{{ route('admin.accounts.subscription',$account->id) }}">@csrf @method('PUT')
+                <label class="form-label" for="subscription_plan_id">Assign plan</label><select class="form-select" id="subscription_plan_id" name="subscription_plan_id">@foreach($plans as $plan)<option value="{{ $plan->id }}" @selected($account->activeSubscription?->subscription_plan_id === $plan->id)>{{ $plan->name }} — {{ $plan->currency }} {{ number_format((float)$plan->price, 2) }}/{{ Str::headline($plan->billing_period) }}</option>@endforeach</select>
+                <label class="form-label mt-3" for="ends_at">End date (optional)</label><input class="form-control" id="ends_at" name="ends_at" type="datetime-local">
+                <label class="form-label mt-3" for="subscription-note">Admin note (optional)</label><textarea class="form-control" id="subscription-note" name="note" rows="2"></textarea>
+                <button class="btn btn-portal w-100 mt-3" type="submit"><i class="bi bi-credit-card"></i>Assign subscription</button>
+            </form>
+        </section>
+        @endif
         @endif
     </aside>
 </div>

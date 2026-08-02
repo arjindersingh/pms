@@ -25,6 +25,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Models\UserRole;
 use App\Models\UserType;
+use App\Models\SubscriptionPlan;
 use App\Models\WorkMode;
 use App\Services\RolePermissionService;
 use Illuminate\Database\Seeder;
@@ -68,6 +69,8 @@ class DatabaseSeeder extends Seeder
             $this->menu($administration, 'Menu Permissions', 'menu-permissions', 'admin.access', 'bi-list-check', 20, $permissionSetup),
             $this->menu($administration, 'Shared Masters', 'shared-masters', 'admin.shared-masters.index', 'bi-collection', 10, $sharedData),
             $this->menu($administration, 'Google Ads', 'google-ads', 'admin.ads.edit', 'bi-badge-ad', 10, $monetization),
+            $this->menu($administration, 'Subscription Plans', 'subscription-plans', 'admin.subscription-plans.index', 'bi-credit-card', 20, $monetization),
+            $this->menu($administration, 'Payment Settings', 'payment-settings', 'admin.payments.edit', 'bi-wallet2', 30, $monetization),
         ];
 
         $recruiterDashboard = $this->menu($recruitment, 'Dashboard', 'recruiter-dashboard', 'recruiter.dashboard', 'bi-speedometer2', 10);
@@ -94,6 +97,9 @@ class DatabaseSeeder extends Seeder
             $this->menu($career, 'Active Applications', 'my-applications', null, 'bi-hourglass-split', 10, $applications),
             $this->menu($career, 'Application History', 'application-history', null, 'bi-clock-history', 20, $applications),
         ];
+
+        $this->seedSubscriptionPlanMenus(UserCategory::Recruiter, $recruiterMenus);
+        $this->seedSubscriptionPlanMenus(UserCategory::Talent, $talentMenus);
 
         $this->grant($administrator, $administration, $adminMenus, true);
         $this->grant($recruiter, $recruitment, $recruiterMenus, true);
@@ -265,6 +271,18 @@ class DatabaseSeeder extends Seeder
     private function role(UserCategory $category, string $name, string $slug, bool $super = false, ?string $description = null): UserRole
     {
         return UserRole::query()->updateOrCreate(['slug' => $slug], ['category' => $category, 'name' => $name, 'description' => $description, 'is_super_admin' => $super, 'is_active' => true]);
+    }
+
+    /** @param array<int, PortalMenu> $menus */
+    private function seedSubscriptionPlanMenus(UserCategory $category, array $menus): void
+    {
+        foreach (SubscriptionPlan::where('category', $category)->get() as $plan) {
+            $limit = $plan->slug === 'free' ? 2 : ($plan->slug === 'intermediate' ? max(2, (int) ceil(count($menus) * .65)) : count($menus));
+            $plan->menus()->sync(collect($menus)->mapWithKeys(function (PortalMenu $menu, int $index) use ($plan, $limit) {
+                $enabled = $index < $limit || ($plan->slug === 'free' && $menu->route_name !== null);
+                return [$menu->id => ['can_view' => $enabled, 'can_create' => $enabled && $plan->slug !== 'free', 'can_update' => $enabled && $plan->slug !== 'free', 'can_delete' => $enabled && $plan->slug === 'full']];
+            })->all());
+        }
     }
 
     /**

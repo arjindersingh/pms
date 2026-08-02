@@ -32,6 +32,19 @@ class User extends Authenticatable
         return $this->belongsTo(UserRole::class, 'user_role_id');
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(UserSubscription::class);
+    }
+
+    public function activeSubscription(): HasOne
+    {
+        return $this->hasOne(UserSubscription::class)
+            ->where('status', 'active')->where('starts_at', '<=', now())
+            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>', now()))
+            ->latestOfMany('starts_at');
+    }
+
     public function permittedModules()
     {
         return $this->belongsToMany(PortalModule::class, 'portal_module_user')->withPivot('enabled')->withTimestamps();

@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->appendToGroup('web', CheckSystemCompatibility::class);
         $middleware->appendToGroup('web', TrackUserSession::class);
+        $middleware->validateCsrfTokens(except: ['payments/webhook/*']);
 
         $middleware->alias([
             'category' => EnsureUserCategory::class,

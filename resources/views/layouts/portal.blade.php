@@ -35,10 +35,10 @@
         @endif
         <main class="portal-main">
             <div class="portal-content container-fluid">
+                @yield('content')
                 @if($thirdLevelMenus->isNotEmpty())
                     @include('portal.shortcuts', ['shortcuts' => $thirdLevelMenus])
                 @endif
-                @yield('content')
             </div>
         </main>
         @if(($errors->any() || session()->has('error')) && $errorSettings->placement === 'above_footer')

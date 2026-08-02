@@ -6,10 +6,13 @@ use App\Http\Controllers\Admin\AdSettingController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SessionReportController;
 use App\Http\Controllers\Admin\SharedMasterController;
+use App\Http\Controllers\Admin\SubscriptionPlanController;
+use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\Talent\CandidateProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,8 +57,6 @@ Route::middleware(['auth', 'category:administrator', 'module:administration'])->
     Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->middleware('menu:role-management,update')->name('roles.edit');
     Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('menu:role-management,update')->name('roles.update');
     Route::put('/accounts/{user}/role', [RoleController::class, 'assign'])->middleware('menu:role-management,update')->name('accounts.role');
-    Route::get('/accounts/{user}/permissions', [RoleController::class, 'editUserPermissions'])->middleware('menu:role-management,update')->name('accounts.permissions');
-    Route::put('/accounts/{user}/permissions', [RoleController::class, 'updateUserPermissions'])->middleware('menu:role-management,update')->name('accounts.permissions.update');
     Route::get('/google-ads', [AdSettingController::class, 'edit'])->middleware('menu:google-ads,view')->name('ads.edit');
     Route::put('/google-ads', [AdSettingController::class, 'update'])->middleware('menu:google-ads,update')->name('ads.update');
     Route::get('/sessions', [SessionReportController::class, 'index'])->middleware('menu:session-reports,view')->name('sessions.index');
@@ -64,7 +65,18 @@ Route::middleware(['auth', 'category:administrator', 'module:administration'])->
     Route::post('/shared-masters/{type}', [SharedMasterController::class, 'store'])->middleware('menu:shared-masters,create')->name('shared-masters.store');
     Route::put('/shared-masters/{type}/{record}', [SharedMasterController::class, 'update'])->middleware('menu:shared-masters,update')->name('shared-masters.update');
     Route::delete('/shared-masters/{type}/{record}', [SharedMasterController::class, 'destroy'])->middleware('menu:shared-masters,delete')->name('shared-masters.destroy');
+    Route::get('/subscription-plans', [SubscriptionPlanController::class, 'index'])->middleware('menu:subscription-plans,view')->name('subscription-plans.index');
+    Route::get('/subscription-plans/create', [SubscriptionPlanController::class, 'create'])->middleware('menu:subscription-plans,create')->name('subscription-plans.create');
+    Route::post('/subscription-plans', [SubscriptionPlanController::class, 'store'])->middleware('menu:subscription-plans,create')->name('subscription-plans.store');
+    Route::get('/subscription-plans/{subscriptionPlan}/edit', [SubscriptionPlanController::class, 'edit'])->middleware('menu:subscription-plans,update')->name('subscription-plans.edit');
+    Route::put('/subscription-plans/{subscriptionPlan}', [SubscriptionPlanController::class, 'update'])->middleware('menu:subscription-plans,update')->name('subscription-plans.update');
+    Route::put('/accounts/{user}/subscription', [SubscriptionPlanController::class, 'assign'])->middleware('menu:subscription-plans,update')->name('accounts.subscription');
+    Route::get('/payment-settings', [PaymentSettingController::class, 'edit'])->middleware('menu:payment-settings,view')->name('payments.edit');
+    Route::put('/payment-settings/{gateway}', [PaymentSettingController::class, 'update'])->middleware('menu:payment-settings,update')->name('payments.update');
+    Route::get('/payment-transactions', [PaymentSettingController::class, 'transactions'])->middleware('menu:payment-settings,view')->name('payments.transactions');
 });
+
+Route::post('/payments/webhook/{provider}', PaymentWebhookController::class)->name('payments.webhook');
 
 Route::middleware(['auth', 'category:recruiter', 'module:recruitment'])->prefix('recruiter')->name('recruiter.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'recruiter'])

@@ -1,7 +1,7 @@
 @extends('layouts.administrator')
 @section('title', 'Roles & Permissions')
 @section('content')
-<div class="dashboard-heading"><div><span class="dashboard-kicker">ACCESS CONTROL</span><h1>Roles & permissions</h1><p>Create category-specific quick-start roles, then customize permissions for individual users.</p></div></div>
+<div class="dashboard-heading"><div><span class="dashboard-kicker">ACCESS CONTROL</span><h1>Roles & permissions</h1><p>Configure role-based module access. Recruiter and talent menu access is controlled by subscription plans.</p></div></div>
 @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
 <div class="role-page-grid">
     <section class="dashboard-card">
@@ -20,7 +20,7 @@
             <label class="form-label mt-3" for="role-description">Description</label><textarea class="form-control" id="role-description" name="description" rows="3"></textarea>
             <button class="btn btn-portal w-100 mt-3" type="submit"><i class="bi bi-plus-lg"></i>Create role</button>
         </form>
-        <div class="role-explainer"><i class="bi bi-lightbulb"></i><p><strong>Templates are starting points.</strong> Assigning a role copies its current permissions to the user. Later template edits never erase individual customization.</p></div>
+        <div class="role-explainer"><i class="bi bi-lightbulb"></i><p><strong>Roles control modules.</strong> Menu visibility for paid user accounts is managed centrally from Subscription Plans.</p></div>
     </aside>
 </div>
 @endsection
