@@ -62,7 +62,7 @@ return new class extends Migration
                 DB::table('subscription_plans')->insert([
                     'category' => $category, 'name' => $name, 'slug' => $slug,
                     'description' => $name.' '.$category.' access plan.', 'price' => $price,
-                    'currency' => 'USD', 'billing_period' => 'monthly', 'position' => $position,
+                    'currency' => 'USD', 'billing_period' => $price == 0 ? 'na' : 'monthly', 'position' => $position,
                     'is_active' => true, 'created_at' => $now, 'updated_at' => $now,
                 ]);
             }
@@ -95,7 +95,7 @@ return new class extends Migration
                 DB::table('user_subscriptions')->insert([
                     'user_id' => $user->id, 'subscription_plan_id' => $freePlans[$user->category],
                     'status' => 'active', 'starts_at' => $now, 'price' => 0, 'currency' => 'USD',
-                    'billing_period' => 'monthly', 'created_at' => $now, 'updated_at' => $now,
+                    'billing_period' => 'na', 'created_at' => $now, 'updated_at' => $now,
                 ]);
             });
 

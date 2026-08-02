@@ -12,7 +12,7 @@
             @if($activeSubscription)
                 <div class="row g-3">
                     <div class="col-sm-3"><small class="text-muted d-block">Price</small><strong>{{ $activeSubscription->currency }} {{ number_format((float)$activeSubscription->price, 2) }}</strong></div>
-                    <div class="col-sm-3"><small class="text-muted d-block">Billing period</small><strong>{{ Str::headline($activeSubscription->billing_period) }}</strong></div>
+                    <div class="col-sm-3"><small class="text-muted d-block">Billing period</small><strong>{{ (float)$activeSubscription->price === 0.0 ? 'N/A' : (\App\Models\SubscriptionPlan::BILLING_PERIODS[$activeSubscription->billing_period] ?? Str::headline($activeSubscription->billing_period)) }}</strong></div>
                     <div class="col-sm-3"><small class="text-muted d-block">Started</small><strong>{{ $activeSubscription->starts_at->format('M j, Y') }}</strong></div>
                     <div class="col-sm-3"><small class="text-muted d-block">Renews / Expires</small><strong>{{ $activeSubscription->ends_at?->format('M j, Y') ?? 'No expiry' }}</strong></div>
                 </div>
@@ -28,7 +28,7 @@
                 <section class="subscription-plan-card {{ $activeSubscription?->subscription_plan_id === $plan->id ? 'border-primary' : '' }}">
                     <span class="plan-state {{ $activeSubscription?->subscription_plan_id === $plan->id ? '' : 'inactive' }}">{{ $activeSubscription?->subscription_plan_id === $plan->id ? 'Current plan' : 'Available' }}</span>
                     <h3>{{ $plan->name }}</h3><p>{{ $plan->description }}</p>
-                    <strong>{{ $plan->currency }} {{ number_format((float)$plan->price, 2) }}<small>/ {{ Str::headline($plan->billing_period) }}</small></strong>
+                    <strong>{{ $plan->currency }} {{ number_format((float)$plan->price, 2) }}<small>{{ (float)$plan->price > 0 ? '/ '.$plan->billingPeriodLabel() : ' · '.$plan->billingPeriodLabel() }}</small></strong>
                     <ul class="small text-muted mt-3 ps-3">@foreach($plan->menus->take(6) as $menu)<li>{{ $menu->name }}</li>@endforeach</ul>
                     <form method="POST" action="{{ route($renewRoute) }}" class="mt-auto pt-3">@csrf<input type="hidden" name="subscription_plan_id" value="{{ $plan->id }}">
                         @if((float)$plan->price > 0)

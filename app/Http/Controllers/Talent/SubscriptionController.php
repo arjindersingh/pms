@@ -105,10 +105,11 @@ class SubscriptionController extends Controller
     private function endsAt(string $billingPeriod): ?Carbon
     {
         return match ($billingPeriod) {
+            'daily' => now()->addDay(),
             'monthly' => now()->addMonth(),
             'quarterly' => now()->addMonths(3),
             'yearly', 'annual' => now()->addYear(),
-            'lifetime' => null,
+            'na', 'lifetime', 'one_time' => null,
             default => now()->addMonth(),
         };
     }

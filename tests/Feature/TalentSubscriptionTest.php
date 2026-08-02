@@ -67,7 +67,8 @@ class TalentSubscriptionTest extends TestCase
         $this->assertSame(1, $talent->subscriptions()->where('status', 'active')->count());
         $subscription = $talent->activeSubscription()->firstOrFail();
         $this->assertSame($plan->id, $subscription->subscription_plan_id);
-        $this->assertNotNull($subscription->ends_at);
+        $this->assertNull($subscription->ends_at);
+        $this->assertSame('na', $subscription->billing_period);
         $this->assertDatabaseHas('payment_transactions', [
             'user_id' => $talent->id,
             'user_subscription_id' => $subscription->id,

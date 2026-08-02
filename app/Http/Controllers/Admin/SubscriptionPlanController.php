@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\UserCategory;
 use App\Http\Controllers\Controller;
 use App\Models\PortalMenu;
+use App\Models\PortalModule;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -29,16 +30,22 @@ class SubscriptionPlanController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request, true);
-        $base = Str::slug($data['name']); $slug = $base; $suffix = 2;
-        while (SubscriptionPlan::where('category', $data['category'])->where('slug', $slug)->exists()) $slug = $base.'-'.$suffix++;
+        $base = Str::slug($data['name']);
+        $slug = $base;
+        $suffix = 2;
+        while (SubscriptionPlan::where('category', $data['category'])->where('slug', $slug)->exists()) {
+            $slug = $base.'-'.$suffix++;
+        }
         $plan = SubscriptionPlan::create($data + ['slug' => $slug, 'is_active' => $request->boolean('is_active')]);
+
         return redirect()->route('admin.subscription-plans.edit', $plan)->with('status', 'Plan created. You can now select its menu permissions.');
     }
 
     public function edit(SubscriptionPlan $subscriptionPlan): View
     {
         $moduleSlug = $subscriptionPlan->category === UserCategory::Recruiter ? 'recruitment' : 'career';
-        $modules = \App\Models\PortalModule::where('slug', $moduleSlug)->with('menus')->get();
+        $modules = PortalModule::where('slug', $moduleSlug)->with('menus')->get();
+
         return view('admin.subscriptions.edit', ['plan' => $subscriptionPlan->load('menus'), 'modules' => $modules, 'creating' => false]);
     }
 
@@ -53,6 +60,7 @@ class SubscriptionPlanController extends Controller
                 'can_update' => $request->boolean("menus.$id.update"), 'can_delete' => $request->boolean("menus.$id.delete"),
             ]])->all());
         });
+
         return back()->with('status', 'Subscription plan and menu permissions saved.');
     }
 
@@ -73,13 +81,23 @@ class SubscriptionPlanController extends Controller
                 'billing_period' => $plan->billing_period, 'assigned_by' => $request->user()->id, 'note' => $data['note'] ?? null,
             ]);
         });
+
         return back()->with('status', "{$plan->name} subscription assigned to {$account->name}.");
     }
 
     private function validated(Request $request, bool $withCategory): array
     {
-        $rules = ['name' => ['required','string','max:100'], 'description' => ['nullable','string','max:1000'], 'price' => ['required','numeric','min:0'], 'currency' => ['required','string','size:3'], 'billing_period' => ['required', Rule::in(['monthly','quarterly','yearly','one_time'])], 'position' => ['required','integer','min:0'], 'is_active' => ['boolean']];
-        if ($withCategory) $rules['category'] = ['required', Rule::in([UserCategory::Recruiter->value, UserCategory::Talent->value])];
-        return $request->validate($rules);
+        $rules = ['name' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:1000'], 'price' => ['required', 'numeric', 'min:0'], 'currency' => ['required', 'string', 'size:3'], 'billing_period' => ['required', Rule::in(array_keys(SubscriptionPlan::BILLING_PERIODS))], 'position' => ['required', 'integer', 'min:0'], 'is_active' => ['boolean']];
+        if ($withCategory) {
+            $rules['category'] = ['required', Rule::in([UserCategory::Recruiter->value, UserCategory::Talent->value])];
+        }
+        $data = $request->validate($rules);
+        $data['billing_period'] = (float) $data['price'] === 0.0 ? 'na' : $data['billing_period'];
+
+        if ((float) $data['price'] > 0 && $data['billing_period'] === 'na') {
+            throw IlluminateValidationValidationException::withMessages(['billing_period' => 'Select a billing period for a paid plan.']);
+        }
+
+        return $data;
     }
 }

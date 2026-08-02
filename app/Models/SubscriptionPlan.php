@@ -9,7 +9,24 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubscriptionPlan extends Model
 {
+    public const BILLING_PERIODS = [
+        'na' => 'N/A',
+        'daily' => 'Daily',
+        'monthly' => 'Monthly',
+        'quarterly' => 'Quarterly',
+        'yearly' => 'Yearly',
+        'lifetime' => 'Lifetime',
+        'one_time' => 'One-time payment',
+    ];
+
     protected $fillable = ['category', 'name', 'slug', 'description', 'price', 'currency', 'billing_period', 'position', 'is_active'];
+
+    public function billingPeriodLabel(): string
+    {
+        return (float) $this->price === 0.0
+            ? self::BILLING_PERIODS['na']
+            : (self::BILLING_PERIODS[$this->billing_period] ?? str($this->billing_period)->headline()->toString());
+    }
 
     protected function casts(): array
     {

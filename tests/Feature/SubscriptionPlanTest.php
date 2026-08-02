@@ -51,5 +51,46 @@ class SubscriptionPlanTest extends TestCase
         $this->post(route('register.talent.store'), ['name' => 'Subscriber', 'email' => 'subscriber@example.com', 'password' => 'Password123', 'password_confirmation' => 'Password123', 'terms' => true])->assertRedirect(route('talent.dashboard'));
         $user = User::where('email', 'subscriber@example.com')->firstOrFail();
         $this->assertSame('free', $user->activeSubscription()->firstOrFail()->plan->slug);
+        $this->assertSame('na', $user->activeSubscription()->firstOrFail()->billing_period);
+    }
+
+    public function test_admin_can_create_daily_and_lifetime_plans(): void
+    {
+        $admin = User::where('email', 'admin@example.com')->firstOrFail();
+
+        foreach (['daily', 'lifetime', 'one_time'] as $position => $period) {
+            $this->actingAs($admin)->post(route('admin.subscription-plans.store'), [
+                'category' => 'talent',
+                'name' => ucfirst(str_replace('_', ' ', $period)).' plan',
+                'price' => 10,
+                'currency' => 'USD',
+                'billing_period' => $period,
+                'position' => 100 + $position,
+                'is_active' => 1,
+            ])->assertRedirect();
+
+            $this->assertDatabaseHas('subscription_plans', ['category' => 'talent', 'billing_period' => $period]);
+        }
+    }
+
+    public function test_free_plan_is_always_saved_with_na_billing_period(): void
+    {
+        $admin = User::where('email', 'admin@example.com')->firstOrFail();
+
+        $this->actingAs($admin)->post(route('admin.subscription-plans.store'), [
+            'category' => 'recruiter',
+            'name' => 'Another free plan',
+            'price' => 0,
+            'currency' => 'USD',
+            'billing_period' => 'monthly',
+            'position' => 100,
+            'is_active' => 1,
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('subscription_plans', [
+            'category' => 'recruiter',
+            'name' => 'Another free plan',
+            'billing_period' => 'na',
+        ]);
     }
 }
