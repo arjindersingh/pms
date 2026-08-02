@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureModuleAccess;
 use App\Http\Middleware\EnsureUserCategory;
 use App\Http\Middleware\CheckSystemCompatibility;
 use App\Http\Middleware\TrackUserSession;
+use App\Http\Middleware\PreventAuthenticatedPageCaching;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->appendToGroup('web', CheckSystemCompatibility::class);
         $middleware->appendToGroup('web', TrackUserSession::class);
+        $middleware->appendToGroup('web', PreventAuthenticatedPageCaching::class);
         $middleware->validateCsrfTokens(except: ['payments/webhook/*']);
 
         $middleware->alias([

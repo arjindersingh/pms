@@ -8,6 +8,46 @@ window.bootstrap = bootstrap;
 // Expose Alpine globally for Alpine plugins and inline project scripts.
 window.Alpine = Alpine;
 
+// Clear origin-owned browser data before logout. The server also returns a
+// Clear-Site-Data header, which covers HttpOnly cookies and provides the
+// authoritative cleanup in browsers that support it.
+document.querySelectorAll('form[data-secure-logout]').forEach(form => {
+    form.addEventListener('submit', async event => {
+        if (form.dataset.cleanupComplete === 'true') return;
+
+        event.preventDefault();
+        form.querySelector('button[type="submit"]')?.setAttribute('disabled', 'disabled');
+
+        try { localStorage.clear(); } catch (error) {}
+        try { sessionStorage.clear(); } catch (error) {}
+
+        const cleanup = [];
+        if ('caches' in window) {
+            cleanup.push(caches.keys().then(keys => Promise.all(keys.map(key => caches.delete(key)))));
+        }
+        if ('serviceWorker' in navigator) {
+            cleanup.push(navigator.serviceWorker.getRegistrations().then(registrations => Promise.all(registrations.map(registration => registration.unregister()))));
+        }
+        if (window.indexedDB?.databases) {
+            cleanup.push(indexedDB.databases().then(databases => Promise.all(
+                databases.filter(database => database.name).map(database => new Promise(resolve => {
+                    const request = indexedDB.deleteDatabase(database.name);
+                    request.onsuccess = request.onerror = request.onblocked = () => resolve();
+                }))
+            )));
+        }
+
+        // Cleanup must never trap the user in an authenticated session if a
+        // browser API stalls (for example, an IndexedDB connection is open).
+        await Promise.race([
+            Promise.allSettled(cleanup),
+            new Promise(resolve => setTimeout(resolve, 1500)),
+        ]);
+        form.dataset.cleanupComplete = 'true';
+        form.requestSubmit();
+    });
+});
+
 Alpine.data('portalShell', () => ({
     sidebarOpen: false,
     sidebarCollapsed: localStorage.getItem('portal-sidebar-collapsed') === 'true',

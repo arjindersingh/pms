@@ -52,7 +52,7 @@
                 <a class="dropdown-item" href="{{ route('account.password') }}"><i class="bi bi-key"></i>Change password</a>
                 <a class="dropdown-item" href="{{ route('account.error-settings') }}"><i class="bi bi-exclamation-diamond"></i>Error settings</a>
                 <div class="dropdown-divider"></div>
-                <form method="POST" action="{{ route('logout') }}">@csrf<button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-right"></i>Sign out</button></form>
+                <form method="POST" action="{{ route('logout') }}" data-secure-logout>@csrf<button class="dropdown-item text-danger" type="submit"><i class="bi bi-box-arrow-right"></i>Sign out</button></form>
             </div>
         </div>
     </div>

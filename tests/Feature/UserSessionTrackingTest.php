@@ -39,7 +39,10 @@ class UserSessionTrackingTest extends TestCase
 
         $this->travel(5)->minutes();
         $this->get(route('admin.dashboard'))->assertOk();
-        $this->post(route('logout'))->assertRedirect(route('administrator.login'));
+        $this->post(route('logout'))
+            ->assertRedirect(route('administrator.login'))
+            ->assertHeader('Clear-Site-Data', '"cache", "cookies", "storage"')
+            ->assertHeader('Cache-Control', 'no-store, private');
 
         $session->refresh();
         $this->assertNotNull($session->logged_out_at);
@@ -47,6 +50,18 @@ class UserSessionTrackingTest extends TestCase
         $this->assertGreaterThanOrEqual(300, $session->duration_seconds);
         $this->assertGreaterThanOrEqual(2, $session->request_count);
         $this->assertDatabaseHas('user_session_activities', ['user_session_history_id' => $session->id, 'route_name' => 'admin.dashboard', 'response_status' => 200]);
+    }
+
+    public function test_authenticated_pages_are_not_cached_by_the_browser(): void
+    {
+        $admin = User::query()->where('email', 'admin@example.com')->firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'no-store, private')
+            ->assertHeader('Pragma', 'no-cache')
+            ->assertHeader('Expires', '0');
     }
 
     public function test_admin_can_filter_reports_and_open_session_details(): void

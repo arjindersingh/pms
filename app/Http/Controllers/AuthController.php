@@ -68,6 +68,15 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route($wasAdministrator ? 'administrator.login' : 'login');
+        return redirect()
+            ->route($wasAdministrator ? 'administrator.login' : 'login')
+            // Ask supported browsers to remove every cache, cookie, and storage
+            // entry owned by this origin. This includes HttpOnly cookies and
+            // IndexedDB data that JavaScript cannot reliably remove itself.
+            ->withHeaders([
+                'Clear-Site-Data' => '"cache", "cookies", "storage"',
+                'Cache-Control' => 'no-store, private',
+                'Pragma' => 'no-cache',
+            ]);
     }
 }
