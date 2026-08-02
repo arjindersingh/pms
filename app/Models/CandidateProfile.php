@@ -31,6 +31,11 @@ class CandidateProfile extends Model
         return $this->hasMany(CandidateExperience::class);
     }
 
+    public function publications(): HasMany
+    {
+        return $this->hasMany(CandidatePublication::class);
+    }
+
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(Skill::class)->withPivot(['proficiency_level_id', 'years_experience', 'is_primary'])->withTimestamps();

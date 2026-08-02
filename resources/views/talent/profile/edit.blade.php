@@ -20,6 +20,7 @@
 </div><button class="btn btn-portal mt-4" type="submit"><i class="bi bi-check-lg"></i>Save {{ Str::lower($tabs[$tab]) }}</button></section></form>
 @elseif($tab==='education') @include('talent.profile.repeatable',['kind'=>'education','records'=>$profile->educations])
 @elseif($tab==='experience') @include('talent.profile.repeatable',['kind'=>'experience','records'=>$profile->experiences])
+@elseif($tab==='publications') @include('talent.profile.publications',['records'=>$profile->publications])
 @else @include('talent.profile.skills')
 @endif
 @endsection

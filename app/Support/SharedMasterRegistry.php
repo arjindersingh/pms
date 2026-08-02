@@ -20,6 +20,8 @@ use App\Models\WorkMode;
 use App\Models\JobSector;
 use App\Models\JobSpecialization;
 use App\Models\JobTitle;
+use App\Models\PublicationType;
+use App\Models\PublicationMode;
 
 final class SharedMasterRegistry
 {
@@ -27,6 +29,8 @@ final class SharedMasterRegistry
         'job-sectors' => ['label' => 'Job Sectors', 'model' => JobSector::class, 'icon' => 'bi-diagram-3'],
         'job-specializations' => ['label' => 'Job Specializations', 'model' => JobSpecialization::class, 'icon' => 'bi-diagram-2', 'parent' => ['field' => 'job_sector_id', 'label' => 'Job Sector', 'model' => JobSector::class]],
         'job-titles' => ['label' => 'Job Titles', 'model' => JobTitle::class, 'icon' => 'bi-person-workspace', 'parent' => ['field' => 'job_specialization_id', 'label' => 'Job Specialization', 'model' => JobSpecialization::class]],
+        'publication-types' => ['label' => 'Publication Types', 'model' => PublicationType::class, 'icon' => 'bi-journal-richtext'],
+        'publication-modes' => ['label' => 'Publication Modes', 'model' => PublicationMode::class, 'icon' => 'bi-globe2'],
         'qualification-levels' => ['label' => 'Qualification Levels', 'model' => QualificationLevel::class, 'icon' => 'bi-mortarboard'],
         'degrees' => ['label' => 'Degrees / Courses', 'model' => Degree::class, 'icon' => 'bi-award', 'parent' => ['field' => 'qualification_level_id', 'label' => 'Qualification Level', 'model' => QualificationLevel::class]],
         'educational-institutions' => ['label' => 'Educational Institutions', 'model' => EducationalInstitution::class, 'icon' => 'bi-buildings'],

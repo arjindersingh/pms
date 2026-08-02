@@ -17,6 +17,8 @@ use App\Models\Skill;
 use App\Models\StudyMode;
 use App\Models\Subject;
 use App\Models\WorkMode;
+use App\Models\PublicationType;
+use App\Models\PublicationMode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,15 +28,15 @@ use Illuminate\View\View;
 
 class CandidateProfileController extends Controller
 {
-    private const TABS = ['personal' => 'Personal', 'photograph' => 'Photograph', 'contact' => 'Contact & Address', 'education' => 'Education', 'experience' => 'Experience', 'skills' => 'Skills & Languages', 'preferences' => 'Job Preferences'];
+    private const TABS = ['personal' => 'Personal', 'photograph' => 'Photograph', 'contact' => 'Contact & Address', 'education' => 'Education', 'experience' => 'Experience', 'publications' => 'Publications', 'skills' => 'Skills & Languages', 'preferences' => 'Job Preferences'];
 
     public function edit(Request $request, string $tab = 'personal'): View
     {
         abort_unless(isset(self::TABS[$tab]), 404);
         $profile = $request->user()->candidateProfile()->firstOrCreate([], ['profile_code' => 'CAN-'.str_pad((string) $request->user()->id, 7, '0', STR_PAD_LEFT)]);
-        $profile->load(['educations.subjects', 'educations.qualificationLevel', 'experiences', 'skills', 'languages', 'employmentTypes', 'workModes']);
+        $profile->load(['educations.subjects', 'educations.qualificationLevel', 'experiences', 'publications.type', 'publications.mode', 'skills', 'languages', 'employmentTypes', 'workModes']);
 
-        return view('talent.profile.edit', ['profile' => $profile, 'tab' => $tab, 'tabs' => self::TABS] + $this->masters());
+        return view('talent.profile.edit', ['profile' => $profile, 'tab' => $tab, 'tabs' => self::TABS, 'publicationTypes' => PublicationType::available()->get(), 'publicationModes' => PublicationMode::available()->get()] + $this->masters());
     }
 
     public function update(Request $request, string $tab): RedirectResponse
@@ -131,6 +133,22 @@ class CandidateProfileController extends Controller
         return response()->json(['subject' => ['id' => $subject->id, 'name' => $subject->display_name]]);
     }
 
+    public function publication(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'publication_type_id' => ['required', Rule::exists('publication_types','id')->where('is_active',true)->whereNull('deleted_at')],
+            'publication_mode_id' => ['nullable', Rule::exists('publication_modes','id')->where('is_active',true)->whereNull('deleted_at')],
+            'area_of_publication' => ['required','string','max:180'], 'publication_count' => ['required','integer','min:1','max:100000'],
+            'title' => ['nullable','string','max:300'], 'publisher_name' => ['nullable','string','max:200'], 'published_on' => ['nullable','date','before_or_equal:today'],
+            'edition_or_volume' => ['nullable','string','max:100'], 'identifier' => ['nullable','string','max:150'], 'publication_url' => ['nullable','url','max:500'],
+            'co_authors' => ['nullable','string','max:2000'], 'description' => ['nullable','string','max:3000'], 'is_peer_reviewed' => ['nullable','boolean'], 'is_verified' => ['nullable','boolean'],
+        ]);
+        $data['is_peer_reviewed']=$request->boolean('is_peer_reviewed'); $data['is_verified']=$request->boolean('is_verified');
+        $profile = $request->user()->candidateProfile()->firstOrCreate([], ['profile_code' => 'CAN-'.str_pad((string) $request->user()->id, 7, '0', STR_PAD_LEFT)]);
+        $profile->publications()->create($data);
+        return back()->with('status','Publication information added.');
+    }
+
     public function removeEducationSubject(Request $request, int $education, int $subject): JsonResponse
     {
         $record = $request->user()->candidateProfile->educations()->findOrFail($education);
@@ -159,7 +177,7 @@ class CandidateProfileController extends Controller
     {
         $profile = $request->user()->candidateProfile;
         match ($collection) {
-            'education' => $profile->educations()->whereKey($record)->delete(),'experience' => $profile->experiences()->whereKey($record)->delete(),'skill' => $profile->skills()->detach($record),'language' => $profile->languages()->detach($record),default => abort(404)
+            'education' => $profile->educations()->whereKey($record)->delete(),'experience' => $profile->experiences()->whereKey($record)->delete(),'publication' => $profile->publications()->whereKey($record)->delete(),'skill' => $profile->skills()->detach($record),'language' => $profile->languages()->detach($record),default => abort(404)
         };
 
         return back()->with('status', 'Entry removed.');
