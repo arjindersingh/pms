@@ -52,13 +52,14 @@ class DatabaseSeeder extends Seeder
         $career = $this->module('Career', 'career', 'bi-briefcase', 30);
 
         $adminDashboard = $this->menu($administration, 'Dashboard', 'admin-dashboard', 'admin.dashboard', 'bi-speedometer2', 10);
+        $companyProfile = $this->menu($administration, 'Company Profile', 'company-profile', 'admin.company.edit', 'bi-buildings', 15);
         $accessControl = $this->menu($administration, 'Access Control', 'access-control', null, 'bi-shield-lock', 20);
         $userManagement = $this->menu($administration, 'User Management', 'user-management', null, 'bi-people', 10, $accessControl);
         $permissionSetup = $this->menu($administration, 'Permission Setup', 'permission-setup', null, 'bi-sliders', 20, $accessControl);
         $sharedData = $this->menu($administration, 'Shared Data', 'shared-data', null, 'bi-database', 30);
         $monetization = $this->menu($administration, 'Monetization', 'monetization', null, 'bi-cash-coin', 40);
         $adminMenus = [
-            $adminDashboard, $accessControl, $userManagement, $permissionSetup, $sharedData, $monetization,
+            $adminDashboard, $companyProfile, $accessControl, $userManagement, $permissionSetup, $sharedData, $monetization,
             $this->menu($administration, 'Account Review', 'account-review', 'admin.accounts.index', 'bi-person-check', 30, $accessControl),
             $this->menu($administration, 'Roles & Permissions', 'role-management', 'admin.roles.index', 'bi-person-gear', 40, $accessControl),
             $this->menu($administration, 'Permission Audit', 'permission-audit', 'admin.permission-audit', 'bi-clock-history', 50, $accessControl),
@@ -79,6 +80,7 @@ class DatabaseSeeder extends Seeder
         $candidates = $this->menu($recruitment, 'Candidates', 'candidates', null, 'bi-people', 20, $hiringWorkspace);
         $recruiterMenus = [
             $recruiterDashboard, $hiringWorkspace, $jobs, $candidates,
+            $this->menu($recruitment, 'Candidate Search', 'candidate-search', 'recruiter.candidate-search.edit', 'bi-person-bounding-box', 15, $hiringWorkspace),
             $this->menu($recruitment, 'All Job Postings', 'job-postings', null, 'bi-card-list', 10, $jobs),
             $this->menu($recruitment, 'Create a Job', 'create-job', null, 'bi-plus-square', 20, $jobs),
             $this->menu($recruitment, 'Applications', 'recruiter-applications', null, 'bi-inboxes', 10, $candidates),
@@ -91,6 +93,7 @@ class DatabaseSeeder extends Seeder
         $applications = $this->menu($career, 'Applications', 'applications', null, 'bi-file-earmark-person', 20, $careerWorkspace);
         $talentMenus = [
             $talentDashboard, $careerWorkspace, $opportunities, $applications,
+            $this->menu($career, 'Job Preferences', 'job-preferences', 'talent.job-preferences.edit', 'bi-sliders2', 15, $careerWorkspace),
             $this->menu($career, 'Candidate Profile', 'candidate-profile', 'talent.profile.edit', 'bi-person-vcard', 10, $careerWorkspace),
             $this->menu($career, 'Recommended Jobs', 'find-jobs', null, 'bi-stars', 10, $opportunities),
             $this->menu($career, 'Saved Jobs', 'saved-jobs', null, 'bi-bookmark-heart', 20, $opportunities),
@@ -280,7 +283,8 @@ class DatabaseSeeder extends Seeder
             $limit = $plan->slug === 'free' ? 2 : ($plan->slug === 'intermediate' ? max(2, (int) ceil(count($menus) * .65)) : count($menus));
             $plan->menus()->sync(collect($menus)->mapWithKeys(function (PortalMenu $menu, int $index) use ($plan, $limit) {
                 $enabled = $index < $limit || ($plan->slug === 'free' && $menu->route_name !== null);
-                return [$menu->id => ['can_view' => $enabled, 'can_create' => $enabled && $plan->slug !== 'free', 'can_update' => $enabled && $plan->slug !== 'free', 'can_delete' => $enabled && $plan->slug === 'full']];
+                $essential = in_array($menu->slug, ['job-preferences', 'candidate-search'], true);
+                return [$menu->id => ['can_view' => $enabled, 'can_create' => $enabled && ($plan->slug !== 'free' || $essential), 'can_update' => $enabled && ($plan->slug !== 'free' || $essential), 'can_delete' => $enabled && $plan->slug === 'full']];
             })->all());
         }
     }

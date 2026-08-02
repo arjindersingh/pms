@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
+use App\Models\CompanyProfile;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->ignoreStaleViteHotFile();
+        View::composer('*', fn ($view) => $view->with('companyProfile', CompanyProfile::current()));
 
         // Root-relative build URLs work behind forwarded ports, HTTPS proxies,
         // and IDE previews without relying on APP_URL host detection.

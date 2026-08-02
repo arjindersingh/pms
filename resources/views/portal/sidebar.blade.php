@@ -1,8 +1,19 @@
+@php
+    $activeModuleSlug = match ($portalArea) {
+        'administrator' => 'administration',
+        'recruiter' => 'recruitment',
+        'talent' => 'career',
+        default => null,
+    };
+    $sidebarNavigation = $activeModuleSlug
+        ? $portalNavigation->where('slug', $activeModuleSlug)->values()
+        : $portalNavigation;
+@endphp
 <aside class="portal-sidebar" @keydown.escape.window="sidebarOpen = false">
     <div class="sidebar-mobile-head d-lg-none"><span>Navigation</span><button type="button" @click="sidebarOpen = false"><i class="bi bi-x-lg"></i></button></div>
-    <div class="sidebar-context"><span class="context-icon"><i class="bi {{ $portalNavigation->first()?->icon ?? 'bi-grid' }}"></i></span><span class="sidebar-label"><small>Workspace</small><strong>{{ $portalTheme['eyebrow'] }}</strong></span></div>
+    <div class="sidebar-context"><span class="context-icon"><i class="bi {{ $sidebarNavigation->first()?->icon ?? 'bi-grid' }}"></i></span><span class="sidebar-label"><small>Workspace</small><strong>{{ $portalTheme['eyebrow'] }}</strong></span></div>
     <nav class="sidebar-nav">
-        @foreach($portalNavigation as $module)
+        @foreach($sidebarNavigation as $module)
             <div class="sidebar-module">
                 <div class="sidebar-section-label"><span class="sidebar-label">{{ $module->name }}</span></div>
                 @foreach($module->menus->whereNull('parent_id') as $levelOne)

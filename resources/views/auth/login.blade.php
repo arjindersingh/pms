@@ -13,7 +13,7 @@
     <main class="container min-vh-100 d-flex align-items-center justify-content-center py-5 position-relative">
         <div class="auth-card row g-0 overflow-hidden">
             <div class="col-lg-5 auth-card-aside d-none d-lg-flex flex-column justify-content-between p-5">
-                <a class="brand text-white text-decoration-none" href="{{ route('home') }}"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span><span>PlaceFlow</span></a>
+                <a class="brand text-white text-decoration-none" href="{{ route('home') }}">@if($companyProfile->logoUrl(true))<img class="landing-company-logo" src="{{ $companyProfile->logoUrl(true) }}" alt="{{ $companyProfile->display_name }}">@else<span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>@endif<span>{{ $companyProfile->display_name }}</span></a>
                 <div>
                     <span class="eyebrow text-white-50">{{ $administratorPortal ? 'SECURE OPERATIONS' : 'YOUR NEXT MOVE' }}</span>
                     <h2 class="display-6 fw-bold mt-3">{{ $administratorPortal ? 'Manage placement success with confidence.' : 'Opportunity starts with one sign in.' }}</h2>

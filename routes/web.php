@@ -8,11 +8,13 @@ use App\Http\Controllers\Admin\SessionReportController;
 use App\Http\Controllers\Admin\SharedMasterController;
 use App\Http\Controllers\Admin\SubscriptionPlanController;
 use App\Http\Controllers\Admin\PaymentSettingController;
+use App\Http\Controllers\Admin\CompanyProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\PaymentWebhookController;
+use App\Http\Controllers\JobSearchProfileController;
 use App\Http\Controllers\Talent\CandidateProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -74,6 +76,8 @@ Route::middleware(['auth', 'category:administrator', 'module:administration'])->
     Route::get('/payment-settings', [PaymentSettingController::class, 'edit'])->middleware('menu:payment-settings,view')->name('payments.edit');
     Route::put('/payment-settings/{gateway}', [PaymentSettingController::class, 'update'])->middleware('menu:payment-settings,update')->name('payments.update');
     Route::get('/payment-transactions', [PaymentSettingController::class, 'transactions'])->middleware('menu:payment-settings,view')->name('payments.transactions');
+    Route::get('/company-profile', [CompanyProfileController::class, 'edit'])->middleware('menu:company-profile,view')->name('company.edit');
+    Route::put('/company-profile', [CompanyProfileController::class, 'update'])->middleware('menu:company-profile,update')->name('company.update');
 });
 
 Route::post('/payments/webhook/{provider}', PaymentWebhookController::class)->name('payments.webhook');
@@ -81,11 +85,15 @@ Route::post('/payments/webhook/{provider}', PaymentWebhookController::class)->na
 Route::middleware(['auth', 'category:recruiter', 'module:recruitment'])->prefix('recruiter')->name('recruiter.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'recruiter'])
         ->middleware('menu:recruiter-dashboard,view')->name('dashboard');
+    Route::get('/candidate-search', [JobSearchProfileController::class, 'recruiter'])->middleware('menu:candidate-search,view')->name('candidate-search.edit');
+    Route::put('/candidate-search', [JobSearchProfileController::class, 'updateRecruiter'])->middleware('menu:candidate-search,update')->name('candidate-search.update');
 });
 
 Route::middleware(['auth', 'category:talent', 'module:career'])->prefix('talent')->name('talent.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'talent'])
         ->middleware('menu:talent-dashboard,view')->name('dashboard');
+    Route::get('/job-preferences', [JobSearchProfileController::class, 'talent'])->middleware('menu:job-preferences,view')->name('job-preferences.edit');
+    Route::put('/job-preferences', [JobSearchProfileController::class, 'updateTalent'])->middleware('menu:job-preferences,update')->name('job-preferences.update');
     Route::get('/profile/{tab?}', [CandidateProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/{tab}', [CandidateProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/photograph', [CandidateProfileController::class, 'photograph'])->name('profile.photograph');

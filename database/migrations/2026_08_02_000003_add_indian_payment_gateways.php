@@ -1,0 +1,12 @@
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+return new class extends Migration {
+ public function up(): void {
+  $definitions=['cashfree'=>['Cashfree Payments',['upi_intent'=>'UPI Intent','upi_collect'=>'UPI Collect','card'=>'Cards','netbanking'=>'Net Banking','wallet'=>'Wallets']],'payu'=>['PayU India',['upi'=>'UPI','card'=>'Cards','netbanking'=>'Net Banking','wallet'=>'Wallets','emi'=>'EMI']],'phonepe'=>['PhonePe Payment Gateway',['upi_intent'=>'UPI Intent','upi_qr'=>'UPI QR','card'=>'Cards','netbanking'=>'Net Banking']],'ccavenue'=>['CCAvenue',['upi'=>'UPI','card'=>'Cards','netbanking'=>'Net Banking','wallet'=>'Wallets','emi'=>'EMI']],'instamojo'=>['Instamojo',['upi'=>'UPI','card'=>'Cards','netbanking'=>'Net Banking','wallet'=>'Wallets']],'upi_direct'=>['Direct UPI / QR',['upi_qr'=>'UPI QR','upi_intent'=>'UPI Intent']]];
+  $now=now();$position=50;
+  foreach($definitions as $provider=>[$name,$methods]){$gatewayId=DB::table('payment_gateways')->where('provider',$provider)->value('id')?:DB::table('payment_gateways')->insertGetId(['provider'=>$provider,'name'=>$name,'is_enabled'=>false,'test_mode'=>true,'currencies'=>json_encode(['INR']),'position'=>$position,'created_at'=>$now,'updated_at'=>$now]);foreach($methods as $code=>$methodName)DB::table('payment_gateway_methods')->updateOrInsert(['payment_gateway_id'=>$gatewayId,'code'=>$code],['name'=>$methodName,'is_enabled'=>true,'position'=>$position++,'created_at'=>$now,'updated_at'=>$now]);$position+=10;}
+  $razorpay=DB::table('payment_gateways')->where('provider','razorpay')->value('id');if($razorpay)foreach(['upi_intent'=>'UPI Intent','upi_collect'=>'UPI Collect','upi_qr'=>'UPI QR'] as $code=>$name)DB::table('payment_gateway_methods')->updateOrInsert(['payment_gateway_id'=>$razorpay,'code'=>$code],['name'=>$name,'is_enabled'=>true,'position'=>$position++,'created_at'=>$now,'updated_at'=>$now]);
+ }
+ public function down(): void {$ids=DB::table('payment_gateways')->whereIn('provider',['cashfree','payu','phonepe','ccavenue','instamojo','upi_direct'])->pluck('id');DB::table('payment_gateway_methods')->whereIn('payment_gateway_id',$ids)->delete();DB::table('payment_gateways')->whereIn('id',$ids)->delete();$razorpay=DB::table('payment_gateways')->where('provider','razorpay')->value('id');if($razorpay)DB::table('payment_gateway_methods')->where('payment_gateway_id',$razorpay)->whereIn('code',['upi_intent','upi_collect','upi_qr'])->delete();}
+};

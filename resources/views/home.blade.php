@@ -3,8 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="A modern placement portal connecting ambitious talent with exceptional recruiters.">
-    <title>PlaceFlow · Where talent meets opportunity</title>
+    <meta name="description" content="{{ $companyProfile->meta_description ?: $companyProfile->short_description }}">
+    <meta name="keywords" content="{{ $companyProfile->meta_keywords }}">
+    <title>{{ $companyProfile->meta_title ?: $companyProfile->display_name.' · '.($companyProfile->tagline ?: 'Where talent meets opportunity') }}</title>
+    @if($companyProfile->favicon_path)<link rel="icon" href="{{ asset('storage/'.$companyProfile->favicon_path) }}">@endif
     @livewireStyles
     @livewireScriptConfig
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -15,7 +17,7 @@
 <body class="landing-page">
     <nav class="navbar navbar-expand-lg landing-nav fixed-top" x-data="{ scrolled: false }" @scroll.window="scrolled = window.scrollY > 24" :class="scrolled && 'is-scrolled'">
         <div class="container">
-            <a class="navbar-brand brand" href="#"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span><span>Place<span class="text-gradient">Flow</span></span></a>
+            <a class="navbar-brand brand" href="#">@if($companyProfile->logoUrl())<img class="landing-company-logo" src="{{ $companyProfile->logoUrl() }}" alt="{{ $companyProfile->display_name }}">@else<span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>@endif<span>{{ $companyProfile->display_name }}</span></a>
             <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#landingNav" aria-controls="landingNav" aria-expanded="false" aria-label="Toggle navigation"><i class="bi bi-list fs-2"></i></button>
             <div class="collapse navbar-collapse" id="landingNav">
                 <ul class="navbar-nav mx-auto gap-lg-3">
@@ -50,7 +52,7 @@
                         <div class="hero-copy">
                             <span class="hero-pill"><span class="pulse-dot"></span> Opportunities are waiting for you</span>
                             <h1 class="hero-title mt-4">Where ambition finds its <span class="text-gradient">perfect place.</span></h1>
-                            <p class="hero-lead mt-4">One vibrant community for exceptional talent and forward-thinking recruiters. Discover opportunities, build meaningful connections, and shape what comes next.</p>
+                            <p class="hero-lead mt-4">{{ $companyProfile->short_description ?: 'One vibrant community for exceptional talent and forward-thinking recruiters. Discover opportunities, build meaningful connections, and shape what comes next.' }}</p>
                             <div class="d-flex flex-column flex-sm-row gap-3 mt-5">
                                 <a class="btn btn-brand btn-lg hero-cta" href="{{ route('register.talent') }}"><i class="bi bi-rocket-takeoff me-2"></i>Find my opportunity</a>
                                 <a class="btn btn-soft btn-lg hero-cta" href="{{ route('register.recruiter') }}"><i class="bi bi-people me-2"></i>Hire exceptional talent</a>
@@ -64,7 +66,7 @@
                     <div class="col-lg-6">
                         <div class="hero-visual position-relative mx-auto">
                             <div class="dashboard-preview glass-card">
-                                <div class="preview-top d-flex justify-content-between align-items-center"><div class="d-flex gap-2"><i></i><i></i><i></i></div><span class="small text-secondary">placeflow.app</span><span class="preview-avatar">JD</span></div>
+                                <div class="preview-top d-flex justify-content-between align-items-center"><div class="d-flex gap-2"><i></i><i></i><i></i></div><span class="small text-secondary">{{ parse_url($companyProfile->website, PHP_URL_HOST) ?: request()->getHost() }}</span><span class="preview-avatar">JD</span></div>
                                 <div class="preview-body">
                                     <div class="d-flex justify-content-between align-items-start mb-4"><div><small class="text-secondary">Good morning, Jordan</small><h3 class="h4 fw-bold mt-1">Your career is moving <span>forward.</span></h3></div><span class="notification"><i class="bi bi-bell"></i><b></b></span></div>
                                     <div class="row g-3">
@@ -111,12 +113,10 @@
 
         <div class="container home-ad-wrap"><x-ad-slot :ads="$ads" placement="homepage_bottom" label="Bottom banner" /></div>
 
-        <section class="section-space community-section" id="community">
-            <div class="container text-center position-relative"><div class="community-orb"></div><span class="eyebrow text-warning">THE NEXT CHAPTER STARTS HERE</span><h2 class="display-4 fw-bold text-white mx-auto mt-3">Ready to find where you belong?</h2><p class="lead text-white-50 mx-auto mt-3">Join a placement community built around potential, progress, and possibility.</p><div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-5"><a class="btn btn-light btn-lg px-4" href="{{ route('register.talent') }}">I’m looking for work</a><a class="btn btn-outline-light btn-lg px-4" href="{{ route('register.recruiter') }}">I’m looking for talent</a></div></div>
-        </section>
+        @if($companyProfile->promotion_enabled)<section class="section-space community-section" id="community"><div class="container text-center position-relative"><div class="community-orb"></div><span class="eyebrow text-warning">{{ strtoupper($companyProfile->display_name) }}</span><h2 class="display-4 fw-bold text-white mx-auto mt-3">{{ $companyProfile->promotion_heading ?: 'Ready to find where you belong?' }}</h2><p class="lead text-white-50 mx-auto mt-3">{{ $companyProfile->promotion_text ?: 'Join a placement community built around potential, progress, and possibility.' }}</p><div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-5">@if($companyProfile->promotion_cta_url)<a class="btn btn-light btn-lg px-4" href="{{ $companyProfile->promotion_cta_url }}">{{ $companyProfile->promotion_cta_label ?: 'Learn more' }}</a>@else<a class="btn btn-light btn-lg px-4" href="{{ route('register.talent') }}">I’m looking for work</a><a class="btn btn-outline-light btn-lg px-4" href="{{ route('register.recruiter') }}">I’m looking for talent</a>@endif</div></div></section>@endif
     </main>
 
-    <footer class="landing-footer py-5"><div class="container"><div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"><a class="brand text-decoration-none text-white" href="#"><span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span><span>PlaceFlow</span></a><p class="text-white-50 small mb-0">© {{ date('Y') }} PlaceFlow. Make your next move matter.</p><a class="text-white-50 text-decoration-none small" href="{{ route('login') }}">Member sign in <i class="bi bi-arrow-right ms-1"></i></a></div></div></footer>
+    <footer class="landing-footer py-5"><div class="container"><div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3"><a class="brand text-decoration-none text-white" href="#">@if($companyProfile->logoUrl(true))<img class="landing-company-logo" src="{{ $companyProfile->logoUrl(true) }}" alt="{{ $companyProfile->display_name }}">@else<span class="brand-mark"><i class="bi bi-mortarboard-fill"></i></span>@endif<span>{{ $companyProfile->display_name }}</span></a><p class="text-white-50 small mb-0">© {{ date('Y') }} {{ $companyProfile->legal_name ?: $companyProfile->display_name }}. {{ $companyProfile->tagline }}</p><a class="text-white-50 text-decoration-none small" href="{{ route('login') }}">Member sign in <i class="bi bi-arrow-right ms-1"></i></a></div></div></footer>
     <x-system-compatibility />
 </body>
 </html>

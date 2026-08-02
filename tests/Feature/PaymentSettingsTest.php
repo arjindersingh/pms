@@ -32,4 +32,13 @@ class PaymentSettingsTest extends TestCase
         $this->call('POST',route('payments.webhook','stripe'),[],[],[],['HTTP_X_PAYMENT_SIGNATURE'=>hash_hmac('sha256',$payload,'secret'),'CONTENT_TYPE'=>'application/json'],$payload)->assertAccepted();
         $this->postJson(route('payments.webhook','stripe'),['event'=>'payment.paid'],['X-Payment-Signature'=>'wrong'])->assertUnauthorized();
     }
+
+    public function test_indian_gateways_and_upi_methods_are_available(): void
+    {
+        foreach (['razorpay','cashfree','payu','phonepe','ccavenue','instamojo','upi_direct'] as $provider) $this->assertDatabaseHas('payment_gateways',['provider'=>$provider]);
+        $this->assertDatabaseHas('payment_gateway_methods',['code'=>'upi_intent','is_enabled'=>true]);
+        $this->assertDatabaseHas('payment_gateway_methods',['code'=>'upi_qr','is_enabled'=>true]);
+        $admin=User::where('email','admin@example.com')->firstOrFail();
+        $this->actingAs($admin)->get(route('admin.payments.edit'))->assertOk()->assertSee('Cashfree Payments')->assertSee('PhonePe Payment Gateway')->assertSee('Direct UPI / QR');
+    }
 }

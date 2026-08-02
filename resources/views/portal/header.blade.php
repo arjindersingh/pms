@@ -2,7 +2,7 @@
     <div class="header-left">
         <button class="header-action d-lg-none" type="button" @click="sidebarOpen = true" aria-label="Open navigation"><i class="bi bi-list"></i></button>
         <button class="header-action d-none d-lg-grid" type="button" @click="sidebarCollapsed = !sidebarCollapsed; localStorage.setItem('portal-sidebar-collapsed', sidebarCollapsed)" aria-label="Collapse navigation"><i class="bi bi-layout-sidebar-inset"></i></button>
-        <a class="portal-brand" href="{{ route(auth()->user()->dashboardRoute()) }}"><span class="portal-brand-mark"><i class="bi bi-mortarboard-fill"></i></span><span class="portal-brand-copy"><strong>PlaceFlow</strong><small>{{ $portalTheme['label'] }}</small></span></a>
+        <a class="portal-brand" href="{{ route(auth()->user()->dashboardRoute()) }}">@if($companyProfile->logoUrl())<img class="portal-company-logo" src="{{ $companyProfile->logoUrl() }}" alt="{{ $companyProfile->display_name }}">@else<span class="portal-brand-mark"><i class="bi bi-mortarboard-fill"></i></span>@endif<span class="portal-brand-copy"><strong>{{ $companyProfile->display_name }}</strong><small>{{ $portalTheme['label'] }}</small></span></a>
     </div>
 
     <div class="header-center d-none d-md-flex">

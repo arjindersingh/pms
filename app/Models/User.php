@@ -45,6 +45,11 @@ class User extends Authenticatable
             ->latestOfMany('starts_at');
     }
 
+    public function jobSearchProfile(): HasOne
+    {
+        return $this->hasOne(JobSearchProfile::class);
+    }
+
     public function permittedModules()
     {
         return $this->belongsToMany(PortalModule::class, 'portal_module_user')->withPivot('enabled')->withTimestamps();
