@@ -19,14 +19,41 @@ class TalentSubscriptionTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
-    public function test_talent_can_view_subscription_details_in_the_account_menu(): void
+    public function test_talent_can_view_subscription_details_in_the_top_account_menu(): void
     {
         $talent = User::where('email', 'talent@example.com')->firstOrFail();
 
         $this->actingAs($talent)->get(route('talent.dashboard'))
-            ->assertOk()->assertSee('Subscription')->assertSee(route('talent.subscription.show'), false);
+            ->assertOk()->assertSee('Subscription & billing', false)->assertSee(route('talent.subscription.show'), false)
+            ->assertDontSee('sidebar-label">Subscription</span>', false);
         $this->get(route('talent.subscription.show'))
             ->assertOk()->assertSeeText('Subscription & billing')->assertSee('Current plan')->assertSee('Free')->assertSee('Renew plan');
+    }
+
+    public function test_recruiter_can_view_subscription_details_in_the_top_account_menu(): void
+    {
+        $recruiter = User::where('email', 'recruiter@example.com')->firstOrFail();
+
+        $this->actingAs($recruiter)->get(route('recruiter.dashboard'))
+            ->assertOk()
+            ->assertSee('Subscription & billing', false)
+            ->assertSee(route('recruiter.subscription.show'), false);
+
+        $this->get(route('recruiter.subscription.show'))
+            ->assertOk()
+            ->assertSeeText('Subscription & billing')
+            ->assertSee('Current plan')
+            ->assertSee(route('recruiter.subscription.renew'), false);
+    }
+
+    public function test_recruiter_cannot_renew_a_talent_plan(): void
+    {
+        $recruiter = User::where('email', 'recruiter@example.com')->firstOrFail();
+        $talentPlan = SubscriptionPlan::where('category', 'talent')->firstOrFail();
+
+        $this->actingAs($recruiter)->post(route('recruiter.subscription.renew'), [
+            'subscription_plan_id' => $talentPlan->id,
+        ])->assertNotFound();
     }
 
     public function test_free_plan_renewal_activates_immediately_and_is_audited(): void

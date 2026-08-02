@@ -1,7 +1,7 @@
 <header class="portal-header">
     <div class="header-left">
         <button class="header-action d-lg-none" type="button" @click="sidebarOpen = true" aria-label="Open navigation"><i class="bi bi-list"></i></button>
-        <button class="header-action d-none d-lg-grid" type="button" @click="sidebarCollapsed = !sidebarCollapsed; localStorage.setItem('portal-sidebar-collapsed', sidebarCollapsed)" aria-label="Collapse navigation"><i class="bi bi-layout-sidebar-inset"></i></button>
+        <button class="header-action d-none d-lg-grid" type="button" @click="toggleSidebar()" :aria-label="sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'" :aria-pressed="sidebarCollapsed"><i class="bi bi-layout-sidebar-inset"></i></button>
         <a class="portal-brand" href="{{ route(auth()->user()->dashboardRoute()) }}">@if($companyProfile->logoUrl())<img class="portal-company-logo" src="{{ $companyProfile->logoUrl() }}" alt="{{ $companyProfile->display_name }}">@else<span class="portal-brand-mark"><i class="bi bi-mortarboard-fill"></i></span>@endif<span class="portal-brand-copy"><strong>{{ $companyProfile->display_name }}</strong><small>{{ $portalTheme['label'] }}</small></span></a>
     </div>
 
@@ -49,6 +49,7 @@
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="{{ route('account.profile') }}"><i class="bi bi-person"></i>Profile</a>
                 <a class="dropdown-item" href="{{ route('account.settings') }}"><i class="bi bi-gear"></i>Account settings</a>
+                @if(in_array($portalArea, ['talent', 'recruiter'], true))<a class="dropdown-item {{ request()->routeIs($portalArea.'.subscription.*') ? 'active' : '' }}" href="{{ route($portalArea.'.subscription.show') }}"><i class="bi bi-credit-card"></i>Subscription & billing</a>@endif
                 <a class="dropdown-item" href="{{ route('account.password') }}"><i class="bi bi-key"></i>Change password</a>
                 <a class="dropdown-item" href="{{ route('account.error-settings') }}"><i class="bi bi-exclamation-diamond"></i>Error settings</a>
                 <div class="dropdown-divider"></div>

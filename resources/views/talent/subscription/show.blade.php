@@ -1,4 +1,4 @@
-@extends('layouts.talent')
+@extends('layouts.'.$portalArea)
 @section('title', 'Subscription & Billing')
 @section('content')
 <div class="dashboard-heading"><div><span class="dashboard-kicker">ACCOUNT · BILLING</span><h1>Subscription & billing</h1><p>Review your plan, available features, renewal options, and payment history.</p></div></div>
@@ -30,7 +30,7 @@
                     <h3>{{ $plan->name }}</h3><p>{{ $plan->description }}</p>
                     <strong>{{ $plan->currency }} {{ number_format((float)$plan->price, 2) }}<small>/ {{ Str::headline($plan->billing_period) }}</small></strong>
                     <ul class="small text-muted mt-3 ps-3">@foreach($plan->menus->take(6) as $menu)<li>{{ $menu->name }}</li>@endforeach</ul>
-                    <form method="POST" action="{{ route('talent.subscription.renew') }}" class="mt-auto pt-3">@csrf<input type="hidden" name="subscription_plan_id" value="{{ $plan->id }}">
+                    <form method="POST" action="{{ route($renewRoute) }}" class="mt-auto pt-3">@csrf<input type="hidden" name="subscription_plan_id" value="{{ $plan->id }}">
                         @if((float)$plan->price > 0)
                             <label class="form-label" for="payment_method_{{ $plan->id }}">Payment method</label>
                             <select class="form-select" id="payment_method_{{ $plan->id }}" name="payment_method_id" required><option value="">Select payment method</option>@foreach($gateways as $gateway)@foreach($gateway->methods as $method)<option value="{{ $method->id }}">{{ $gateway->name }} · {{ $method->name }}</option>@endforeach @endforeach</select>

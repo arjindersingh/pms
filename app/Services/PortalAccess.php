@@ -67,10 +67,6 @@ class PortalAccess
             return true;
         }
 
-        if ($menu->slug === 'subscription-details' && $user->userType?->category === UserCategory::Talent) {
-            return true;
-        }
-
         if (in_array($user->userType?->category, [UserCategory::Recruiter, UserCategory::Talent], true)) {
             $subscription = $user->activeSubscription()->with('plan')->first();
             if (! $subscription?->plan?->is_active || $subscription->plan->category !== $user->userType->category) {

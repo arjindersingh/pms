@@ -50,8 +50,12 @@ document.querySelectorAll('form[data-secure-logout]').forEach(form => {
 
 Alpine.data('portalShell', () => ({
     sidebarOpen: false,
-    sidebarCollapsed: localStorage.getItem('portal-sidebar-collapsed') === 'true',
-    theme: localStorage.getItem('portal-theme') || 'default',
+    sidebarCollapsed: (() => {
+        try { return localStorage.getItem('portal-sidebar-collapsed') === 'true'; } catch (error) { return false; }
+    })(),
+    theme: (() => {
+        try { return localStorage.getItem('portal-theme') || 'default'; } catch (error) { return 'default'; }
+    })(),
     lightSidebar: false,
     themeOptions: [
         { key: 'default', name: 'Workspace', description: 'Your module colour', accent: null, sidebar: null },
@@ -64,6 +68,10 @@ Alpine.data('portalShell', () => ({
         { key: 'mintLight', name: 'Mint Light', description: 'Clean green contrast', accent: '#087f6b', rgb: '8, 127, 107', dark: '#056052', sidebar: '#f7fcfa', canvas: '#eef8f4', light: true },
     ],
     defaults: {},
+    toggleSidebar() {
+        this.sidebarCollapsed = !this.sidebarCollapsed;
+        try { localStorage.setItem('portal-sidebar-collapsed', String(this.sidebarCollapsed)); } catch (error) {}
+    },
     applyTheme(key) {
         const root = document.body;
         const properties = ['--portal-accent', '--portal-accent-rgb', '--portal-accent-dark', '--portal-sidebar', '--portal-canvas'];
@@ -75,7 +83,7 @@ Alpine.data('portalShell', () => ({
     },
     setTheme(key) {
         this.theme = key;
-        localStorage.setItem('portal-theme', key);
+        try { localStorage.setItem('portal-theme', key); } catch (error) {}
         this.applyTheme(key);
     },
 }));

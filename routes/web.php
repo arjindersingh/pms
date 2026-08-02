@@ -88,6 +88,8 @@ Route::middleware(['auth', 'category:recruiter', 'module:recruitment'])->prefix(
         ->middleware('menu:recruiter-dashboard,view')->name('dashboard');
     Route::get('/candidate-search', [JobSearchProfileController::class, 'recruiter'])->middleware('menu:candidate-search,view')->name('candidate-search.edit');
     Route::put('/candidate-search', [JobSearchProfileController::class, 'updateRecruiter'])->middleware('menu:candidate-search,update')->name('candidate-search.update');
+    Route::get('/subscription', [TalentSubscriptionController::class, 'show'])->name('subscription.show');
+    Route::post('/subscription/renew', [TalentSubscriptionController::class, 'renew'])->middleware('throttle:10,1')->name('subscription.renew');
 });
 
 Route::middleware(['auth', 'category:talent', 'module:career'])->prefix('talent')->name('talent.')->group(function () {

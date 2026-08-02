@@ -107,7 +107,6 @@ class DatabaseSeeder extends Seeder
             $talentDashboard, $careerWorkspace, $opportunities, $applications,
             $this->menu($career, 'Job Preferences', 'job-preferences', 'talent.job-preferences.edit', 'bi-sliders2', 15, $careerWorkspace),
             $this->menu($career, 'Candidate Profile', 'candidate-profile', 'talent.profile.edit', 'bi-person-vcard', 10, $careerWorkspace),
-            $this->menu($career, 'Subscription', 'subscription-details', 'talent.subscription.show', 'bi-credit-card', 30, $careerWorkspace),
             $this->menu($career, 'Recommended Jobs', 'find-jobs', null, 'bi-stars', 10, $opportunities),
             $this->menu($career, 'Saved Jobs', 'saved-jobs', null, 'bi-bookmark-heart', 20, $opportunities),
             $this->menu($career, 'Active Applications', 'my-applications', null, 'bi-hourglass-split', 10, $applications),

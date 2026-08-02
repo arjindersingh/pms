@@ -21,8 +21,9 @@ class SubscriptionController extends Controller
     public function show(Request $request): View
     {
         $user = $request->user();
+        $category = $user->userType->category;
         $activeSubscription = $user->activeSubscription()->with('plan')->first();
-        $plans = SubscriptionPlan::where('category', UserCategory::Talent)->where('is_active', true)->with(['menus' => fn ($query) => $query->wherePivot('can_view', true)])->orderBy('position')->get();
+        $plans = SubscriptionPlan::where('category', $category)->where('is_active', true)->with(['menus' => fn ($query) => $query->wherePivot('can_view', true)])->orderBy('position')->get();
         $gateways = PaymentGateway::with(['methods' => fn ($query) => $query->where('is_enabled', true)])->where('is_enabled', true)->orderBy('position')->get();
 
         return view('talent.subscription.show', [
@@ -31,15 +32,20 @@ class SubscriptionController extends Controller
             'gateways' => $gateways,
             'history' => $user->subscriptions()->with('plan')->latest()->get(),
             'transactions' => PaymentTransaction::with(['gateway', 'plan'])->where('user_id', $user->id)->latest()->limit(20)->get(),
+            'portalArea' => $category->value,
+            'renewRoute' => $category->value.'.subscription.renew',
         ]);
     }
 
     public function renew(Request $request): RedirectResponse
     {
-        $plan = SubscriptionPlan::where('category', UserCategory::Talent)->where('is_active', true)->findOrFail($request->integer('subscription_plan_id'));
+        $category = $request->user()->userType->category;
+        abort_unless(in_array($category, [UserCategory::Talent, UserCategory::Recruiter], true), 403);
+
+        $plan = SubscriptionPlan::where('category', $category)->where('is_active', true)->findOrFail($request->integer('subscription_plan_id'));
         $paid = (float) $plan->price > 0;
         $data = $request->validate([
-            'subscription_plan_id' => ['required', Rule::exists('subscription_plans', 'id')->where('category', UserCategory::Talent->value)->where('is_active', true)],
+            'subscription_plan_id' => ['required', Rule::exists('subscription_plans', 'id')->where('category', $category->value)->where('is_active', true)],
             'payment_method_id' => [$paid ? 'required' : 'nullable', 'integer'],
         ]);
 
