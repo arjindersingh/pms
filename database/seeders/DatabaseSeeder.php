@@ -87,15 +87,18 @@ class DatabaseSeeder extends Seeder
         ];
 
         $recruiterDashboard = $this->menu($recruitment, 'Dashboard', 'recruiter-dashboard', 'recruiter.dashboard', 'bi-speedometer2', 10);
-        $recruiterProfile = $this->menu($recruitment, 'Recruiter Profile', 'recruiter-profile', 'recruiter.profile.edit', 'bi-person-vcard', 15);
-        $hiringWorkspace = $this->menu($recruitment, 'Hiring Workspace', 'hiring-workspace', null, 'bi-briefcase', 20);
+        $recruiterProfile = $this->menu($recruitment, 'Profile', 'recruiter-profile', null, 'bi-person-vcard', 15);
+        $recruiterBasic = $this->menu($recruitment, 'Basic Detail', 'recruiter-profile-basic', 'recruiter.profile.basic', 'bi-person', 10, $recruiterProfile);
+        $recruiterContact = $this->menu($recruitment, 'Contact Detail', 'recruiter-profile-contact', 'recruiter.profile.contact', 'bi-telephone', 20, $recruiterProfile);
+        $recruiterOrganizations = $this->menu($recruitment, 'Organisations', 'recruiter-profile-organizations', 'recruiter.profile.organizations', 'bi-buildings', 30, $recruiterProfile);
+        $hiringWorkspace = $this->menu($recruitment, 'Talent Acquisition Hub', 'hiring-workspace', null, 'bi-rocket-takeoff', 20);
         $jobs = $this->menu($recruitment, 'Jobs', 'jobs', null, 'bi-megaphone', 10, $hiringWorkspace);
         $candidates = $this->menu($recruitment, 'Candidates', 'candidates', null, 'bi-people', 20, $hiringWorkspace);
         $recruiterMenus = [
-            $recruiterDashboard, $recruiterProfile, $hiringWorkspace, $jobs, $candidates,
+            $recruiterDashboard, $recruiterProfile, $recruiterBasic, $recruiterContact, $recruiterOrganizations, $hiringWorkspace, $jobs, $candidates,
             $this->menu($recruitment, 'Candidate Search', 'candidate-search', 'recruiter.candidate-search.edit', 'bi-person-bounding-box', 15, $hiringWorkspace),
-            $this->menu($recruitment, 'All Job Postings', 'job-postings', null, 'bi-card-list', 10, $jobs),
-            $this->menu($recruitment, 'Create a Job', 'create-job', null, 'bi-plus-square', 20, $jobs),
+            $this->menu($recruitment, 'All Job Postings', 'job-postings', 'recruiter.job-postings.index', 'bi-card-list', 10, $jobs),
+            $this->menu($recruitment, 'Create a Job', 'create-job', 'recruiter.job-postings.create', 'bi-plus-square', 20, $jobs),
             $this->menu($recruitment, 'Applications', 'recruiter-applications', null, 'bi-inboxes', 10, $candidates),
             $this->menu($recruitment, 'Shortlisted Talent', 'shortlisted-talent', null, 'bi-person-check', 20, $candidates),
         ];
@@ -357,10 +360,12 @@ class DatabaseSeeder extends Seeder
         foreach (SubscriptionPlan::where('category', $category)->get() as $plan) {
             $limit = $plan->slug === 'free' ? 2 : ($plan->slug === 'intermediate' ? max(2, (int) ceil(count($menus) * .65)) : count($menus));
             $plan->menus()->sync(collect($menus)->mapWithKeys(function (PortalMenu $menu, int $index) use ($plan, $limit) {
-                $enabled = $index < $limit || ($plan->slug === 'free' && $menu->route_name !== null);
+                $jobHierarchy = in_array($menu->slug, ['hiring-workspace', 'jobs', 'job-postings', 'create-job'], true);
+                $enabled = $jobHierarchy || $index < $limit || ($plan->slug === 'free' && $menu->route_name !== null);
                 $essential = in_array($menu->slug, ['job-preferences', 'candidate-search'], true);
+                $jobManagement = in_array($menu->slug, ['job-postings', 'create-job'], true);
 
-                return [$menu->id => ['can_view' => $enabled, 'can_create' => $enabled && ($plan->slug !== 'free' || $essential), 'can_update' => $enabled && ($plan->slug !== 'free' || $essential), 'can_delete' => $enabled && $plan->slug === 'full']];
+                return [$menu->id => ['can_view' => $enabled, 'can_create' => $jobManagement || ($enabled && ($plan->slug !== 'free' || $essential)), 'can_update' => $jobManagement || ($enabled && ($plan->slug !== 'free' || $essential)), 'can_delete' => $jobManagement || ($enabled && $plan->slug === 'full')]];
             })->all());
         }
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Recruiter;
 
 use App\Http\Controllers\Controller;
 use App\Models\RecruiterOrganization;
+use App\Models\OrganizationCategory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -11,27 +12,46 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
-    public function edit(Request $request): View
+    public function basic(Request $request): View
     {
-        $profile = $request->user()->recruiterProfile()->firstOrNew();
-        $profile->load('organizations');
-        return view('recruiter.profile.edit', ['profile' => $profile, 'organizationTypes' => RecruiterOrganization::TYPES]);
+        return $this->section($request, 'basic');
     }
 
-    public function update(Request $request): RedirectResponse
+    public function contact(Request $request): View
+    {
+        return $this->section($request, 'contact');
+    }
+
+    public function organizations(Request $request): View
+    {
+        return $this->section($request, 'organizations');
+    }
+
+    public function updateBasic(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'designation' => ['nullable','string','max:120'], 'phone' => ['required','string','max:30'],
-            'alternate_phone' => ['nullable','string','max:30'], 'whatsapp' => ['nullable','string','max:30'],
-            'work_email' => ['nullable','email','max:255'], 'linkedin_url' => ['nullable','url','max:255'],
+            'full_name' => ['required','string','max:150'],
+            'designation' => ['nullable','string','max:120'],
             'professional_summary' => ['nullable','string','max:3000'],
+            'linkedin_url' => ['nullable','url','max:255'],
+        ]);
+        $request->user()->recruiterProfile()->updateOrCreate([], $data);
+        return back()->with('status', 'Basic details saved.');
+    }
+
+    public function updateContact(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'phone' => ['required','string','max:30'],
+            'alternate_phone' => ['nullable','string','max:30'], 'whatsapp' => ['nullable','string','max:30'],
+            'work_email' => ['nullable','email','max:255'],
             'preferred_contact_method' => ['required', Rule::in(['email','phone','whatsapp'])],
             'address_line_1' => ['nullable','string','max:255'], 'address_line_2' => ['nullable','string','max:255'],
             'city' => ['nullable','string','max:100'], 'state' => ['nullable','string','max:100'],
             'postal_code' => ['nullable','string','max:20'], 'country' => ['required','string','max:100'],
         ]);
         $request->user()->recruiterProfile()->updateOrCreate([], $data);
-        return back()->with('status', 'Recruiter contact profile saved.');
+        return back()->with('status', 'Contact details saved.');
     }
 
     public function storeOrganization(Request $request): RedirectResponse { return $this->saveOrganization($request); }
@@ -52,11 +72,13 @@ class ProfileController extends Controller
     private function saveOrganization(Request $request, ?RecruiterOrganization $organization = null): RedirectResponse
     {
         $data = $request->validate([
-            'name' => ['required','string','max:180'], 'organization_type' => ['required', Rule::in(array_keys(RecruiterOrganization::TYPES))],
+            'name' => ['required','string','max:180'], 'organization_type' => ['required', Rule::exists('organization_categories', 'code')->where('is_active', true)],
             'other_type' => ['nullable','required_if:organization_type,other','string','max:100'],
             'legal_name' => ['nullable','string','max:180'], 'registration_number' => ['nullable','string','max:100'],
             'website' => ['nullable','url','max:255'], 'industry' => ['nullable','string','max:120'],
             'organization_size' => ['nullable','string','max:40'], 'description' => ['nullable','string','max:3000'],
+            'hoi_name' => ['nullable','string','max:150'], 'hoi_designation' => ['nullable','string','max:120'],
+            'hoi_email' => ['nullable','email','max:255'], 'hoi_phone' => ['nullable','string','max:30'],
             'placement_contact_name' => ['required','string','max:150'], 'placement_contact_designation' => ['nullable','string','max:120'],
             'placement_email' => ['required','email','max:255'], 'placement_phone' => ['required','string','max:30'],
             'alternate_phone' => ['nullable','string','max:30'], 'address_line_1' => ['required','string','max:255'],
@@ -73,5 +95,18 @@ class ProfileController extends Controller
     private function owns(Request $request, RecruiterOrganization $organization): void
     {
         abort_unless($organization->recruiterProfile?->user_id === $request->user()->id, 404);
+    }
+
+    private function section(Request $request, string $section): View
+    {
+        $profile = $request->user()->recruiterProfile()->firstOrNew();
+        if (! $profile->exists) {
+            $profile->full_name = $request->user()->name;
+            $profile->country = 'India';
+        }
+        if ($section === 'organizations') $profile->load('organizations');
+        return view('recruiter.profile.edit', compact('profile', 'section') + [
+            'organizationTypes' => OrganizationCategory::available()->get(),
+        ]);
     }
 }

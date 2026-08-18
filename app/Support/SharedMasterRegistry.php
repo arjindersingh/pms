@@ -19,6 +19,8 @@ use App\Models\JobSpecialization;
 use App\Models\JobTitle;
 use App\Models\Language;
 use App\Models\MaritalStatus;
+use App\Models\OrganizationCategory;
+use App\Models\OrganizationPost;
 use App\Models\ProficiencyLevel;
 use App\Models\ProjectType;
 use App\Models\PublicationMode;
@@ -38,6 +40,15 @@ use App\Models\WorkMode;
 final class SharedMasterRegistry
 {
     public const TYPES = [
+        'organization-categories' => ['label' => 'Organisation Categories', 'model' => OrganizationCategory::class, 'icon' => 'bi-buildings', 'code_case' => 'lower'],
+        'organization-posts' => [
+            'label' => 'Organisation Posts',
+            'model' => OrganizationPost::class,
+            'icon' => 'bi-person-badge',
+            'code_case' => 'lower',
+            'unique_with_parent' => true,
+            'parent' => ['field' => 'organization_category_id', 'label' => 'Organisation Category', 'model' => OrganizationCategory::class],
+        ],
         'declaration-types' => ['label' => 'Declaration Types', 'model' => DeclarationType::class, 'icon' => 'bi-file-earmark-check'],
         'consent-types' => ['label' => 'Consent Types', 'model' => ConsentType::class, 'icon' => 'bi-shield-check'],
         'job-sectors' => ['label' => 'Job Sectors', 'model' => JobSector::class, 'icon' => 'bi-diagram-3'],

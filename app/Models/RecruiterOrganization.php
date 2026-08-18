@@ -16,5 +16,11 @@ class RecruiterOrganization extends Model
     protected $guarded = [];
     protected function casts(): array { return ['is_primary' => 'boolean', 'is_active' => 'boolean']; }
     public function recruiterProfile(): BelongsTo { return $this->belongsTo(RecruiterProfile::class); }
-    public function getTypeLabelAttribute(): string { return self::TYPES[$this->organization_type] ?? $this->other_type ?? 'Other'; }
+    public function getTypeLabelAttribute(): string
+    {
+        return OrganizationCategory::withTrashed()->where('code', $this->organization_type)->value('display_name')
+            ?? self::TYPES[$this->organization_type]
+            ?? $this->other_type
+            ?? 'Other';
+    }
 }

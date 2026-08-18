@@ -55,8 +55,15 @@ class SharedMasterController extends Controller
 
     private function validated(Request $request, SharedMaster $record, array $definition): array
     {
+        $codePattern = ($definition['code_case'] ?? null) === 'lower'
+            ? 'regex:/^[A-Za-z0-9_\-]+$/'
+            : 'regex:/^[A-Z0-9_\-]+$/';
+        $uniqueCode = Rule::unique($record->getTable(), 'code')->ignore($record->getKey());
+        if (($definition['unique_with_parent'] ?? false) && isset($definition['parent'])) {
+            $uniqueCode->where($definition['parent']['field'], $request->input($definition['parent']['field']));
+        }
         $rules = [
-            'code' => ['required', 'string', 'max:40', 'regex:/^[A-Z0-9_\-]+$/', Rule::unique($record->getTable(), 'code')->ignore($record->getKey())],
+            'code' => ['required', 'string', 'max:40', $codePattern, $uniqueCode],
             'short_name' => ['nullable', 'string', 'max:80'],
             'display_name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string', 'max:1000'],
@@ -69,7 +76,9 @@ class SharedMasterController extends Controller
         }
         $data = $request->validate($rules);
         $data['is_active'] = $request->boolean('is_active');
-        $data['code'] = strtoupper($data['code']);
+        $data['code'] = ($definition['code_case'] ?? null) === 'lower'
+            ? strtolower($data['code'])
+            : strtoupper($data['code']);
 
         return $data;
     }

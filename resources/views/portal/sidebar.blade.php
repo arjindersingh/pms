@@ -11,11 +11,15 @@
 @endphp
 <aside class="portal-sidebar" @keydown.escape.window="sidebarOpen = false">
     <div class="sidebar-mobile-head d-lg-none"><span>Navigation</span><button type="button" @click="sidebarOpen = false"><i class="bi bi-x-lg"></i></button></div>
-    <div class="sidebar-context"><span class="context-icon"><i class="bi {{ $sidebarNavigation->first()?->icon ?? 'bi-grid' }}"></i></span><span class="sidebar-label"><small>Workspace</small><strong>{{ $portalTheme['eyebrow'] }}</strong></span></div>
+    @unless($portalArea === 'recruiter')
+        <div class="sidebar-context"><span class="context-icon"><i class="bi {{ $sidebarNavigation->first()?->icon ?? 'bi-grid' }}"></i></span><span class="sidebar-label"><small>Workspace</small><strong>{{ $portalTheme['eyebrow'] }}</strong></span></div>
+    @endunless
     <nav class="sidebar-nav">
         @foreach($sidebarNavigation as $module)
             <div class="sidebar-module">
-                <div class="sidebar-section-label"><span class="sidebar-label">{{ $module->name }}</span></div>
+                @unless($portalArea === 'recruiter')
+                    <div class="sidebar-section-label"><span class="sidebar-label">{{ $module->name }}</span></div>
+                @endunless
                 @foreach($module->menus->whereNull('parent_id') as $levelOne)
                     @php
                         $levelTwoMenus = $module->menus->where('parent_id', $levelOne->id);
@@ -29,8 +33,19 @@
                         <button class="sidebar-link sidebar-parent" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $menuId }}" aria-expanded="true" title="{{ $levelOne->name }}"><i class="bi {{ $levelOne->icon }}"></i><span class="sidebar-label">{{ $levelOne->name }}</span><i class="bi bi-chevron-down sidebar-chevron"></i></button>
                         <div class="collapse show sidebar-submenu" id="{{ $menuId }}">
                             @foreach($levelTwoMenus as $levelTwo)
-                                @php($levelTwoAvailable = $levelTwo->route_name && Route::has($levelTwo->route_name))
-                                <a class="sidebar-sublink {{ $levelTwoAvailable && request()->routeIs($levelTwo->route_name) ? 'active' : '' }} {{ $levelTwoAvailable ? '' : 'disabled' }}" href="{{ $levelTwoAvailable ? route($levelTwo->route_name) : '#' }}"><span></span><span class="sidebar-label">{{ $levelTwo->name }}</span></a>
+                                @php
+                                    $levelThreeMenus = $module->menus->where('parent_id', $levelTwo->id);
+                                    $levelTwoAvailable = $levelTwo->route_name && Route::has($levelTwo->route_name);
+                                @endphp
+                                @if($levelThreeMenus->isEmpty())
+                                    <a class="sidebar-sublink {{ $levelTwoAvailable && request()->routeIs($levelTwo->route_name) ? 'active' : '' }} {{ $levelTwoAvailable ? '' : 'disabled' }}" href="{{ $levelTwoAvailable ? route($levelTwo->route_name) : '#' }}"><span></span><span class="sidebar-label">{{ $levelTwo->name }}</span></a>
+                                @else
+                                    <div class="sidebar-sublink sidebar-subheading"><span></span><span class="sidebar-label">{{ $levelTwo->name }}</span></div>
+                                    @foreach($levelThreeMenus as $levelThree)
+                                        @php($levelThreeAvailable = $levelThree->route_name && Route::has($levelThree->route_name))
+                                        <a class="sidebar-sublink sidebar-thirdlink {{ $levelThreeAvailable && request()->routeIs($levelThree->route_name) ? 'active' : '' }} {{ $levelThreeAvailable ? '' : 'disabled' }}" href="{{ $levelThreeAvailable ? route($levelThree->route_name) : '#' }}"><span></span><span class="sidebar-label">{{ $levelThree->name }}</span></a>
+                                    @endforeach
+                                @endif
                             @endforeach
                         </div>
                     @endif

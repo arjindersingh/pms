@@ -12,4 +12,5 @@ class RecruiterProfile extends Model
 
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
     public function organizations(): HasMany { return $this->hasMany(RecruiterOrganization::class)->orderByDesc('is_primary')->orderBy('name'); }
+    public function jobPostings(): HasMany { return $this->hasMany(JobPosting::class); }
 }

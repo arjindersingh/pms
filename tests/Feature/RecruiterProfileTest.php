@@ -33,4 +33,45 @@ class RecruiterProfileTest extends TestCase
         $organization = $profile->organizations()->create(['name'=>'Private School','organization_type'=>'school','placement_contact_name'=>'A','placement_email'=>'a@example.com','placement_phone'=>'1','address_line_1'=>'Road','city'=>'City','state'=>'State','postal_code'=>'1','country'=>'India']);
         $this->actingAs($other)->delete(route('recruiter.organizations.destroy',$organization))->assertNotFound();
     }
+
+    public function test_recruiter_profile_sections_are_separate_from_account_profile_and_include_hoi(): void
+    {
+        $recruiter = User::where('email','recruiter@example.com')->firstOrFail();
+
+        $this->actingAs($recruiter)->get(route('recruiter.profile.basic'))
+            ->assertOk()
+            ->assertSee('Basic Detail')
+            ->assertSee('This can differ from your account name.')
+            ->assertSee(route('recruiter.profile.basic'), false)
+            ->assertSee(route('recruiter.profile.contact'), false)
+            ->assertSee(route('recruiter.profile.organizations'), false);
+        $this->get(route('recruiter.profile.contact'))->assertOk()->assertSee('Contact Detail');
+        $this->get(route('recruiter.profile.organizations'))->assertOk()
+            ->assertSee('Organisations')->assertSee('Head of Institution (HOI)');
+
+        $this->put(route('recruiter.profile.basic.update'), [
+            'full_name' => 'Professional Recruiter Name',
+            'designation' => 'Hiring Lead',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('recruiter_profiles', ['user_id' => $recruiter->id, 'full_name' => 'Professional Recruiter Name']);
+        $this->assertDatabaseHas('users', ['id' => $recruiter->id, 'name' => 'Demo Recruiter']);
+    }
+
+    public function test_recruiter_profile_sections_are_visible_in_the_sidebar(): void
+    {
+        $recruiter = User::where('email', 'recruiter@example.com')->firstOrFail();
+
+        $this->actingAs($recruiter)->get(route('recruiter.dashboard'))
+            ->assertOk()
+            ->assertDontSee('Talent acquisition workspace')
+            ->assertDontSee('<div class="sidebar-section-label"><span class="sidebar-label">Recruitment</span></div>', false)
+            ->assertSee('Profile')
+            ->assertSee('Basic Detail')
+            ->assertSee('Contact Detail')
+            ->assertSee('Organisations')
+            ->assertSee(route('recruiter.profile.basic'), false)
+            ->assertSee(route('recruiter.profile.contact'), false)
+            ->assertSee(route('recruiter.profile.organizations'), false);
+    }
 }
