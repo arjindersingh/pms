@@ -17,13 +17,32 @@ class SharedMasterController extends Controller
         $key = $request->string('type')->toString() ?: 'qualification-levels';
         $type = SharedMasterRegistry::get($key);
         $model = $type['model'];
+        $parentOptions = collect();
+        $selectedParentId = null;
+        $records = $model::query()->orderBy('sort_order')->orderBy('display_name');
+
+        if (isset($type['parent'])) {
+            $parentModel = $type['parent']['model'];
+            $parentOptions = $parentModel::available()
+                ->when(isset($type['parent']['context']), fn ($query) => $query->with($type['parent']['context']))
+                ->get();
+        }
+
+        if (($type['scoped_parent'] ?? false) && $parentOptions->isNotEmpty()) {
+            $requestedParentId = $request->integer('parent');
+            $selectedParentId = $parentOptions->contains('id', $requestedParentId)
+                ? $requestedParentId
+                : $parentOptions->firstWhere('code', $type['parent']['default_code'] ?? null)?->id ?? $parentOptions->first()->id;
+            $records->where($type['parent']['field'], $selectedParentId);
+        }
 
         return view('admin.shared-masters.index', [
             'types' => SharedMasterRegistry::TYPES,
             'selectedKey' => $key,
             'selectedType' => $type,
-            'records' => $model::query()->orderBy('sort_order')->orderBy('display_name')->get(),
-            'parentOptions' => isset($type['parent']) ? $type['parent']['model']::available()->get() : collect(),
+            'records' => $records->get(),
+            'parentOptions' => $parentOptions,
+            'selectedParentId' => $selectedParentId,
         ]);
     }
 
@@ -33,7 +52,7 @@ class SharedMasterController extends Controller
         $model = $definition['model'];
         $model::create($this->validated($request, new $model, $definition));
 
-        return $this->backTo($type, $definition['label'].' entry created.');
+        return $this->backTo($type, $definition['label'].' entry created.', $request->integer($definition['parent']['field'] ?? ''));
     }
 
     public function update(Request $request, string $type, int $record): RedirectResponse
@@ -42,15 +61,17 @@ class SharedMasterController extends Controller
         $item = $this->record($definition['model'], $record);
         $item->update($this->validated($request, $item, $definition));
 
-        return $this->backTo($type, $definition['label'].' entry updated.');
+        return $this->backTo($type, $definition['label'].' entry updated.', $request->integer($definition['parent']['field'] ?? ''));
     }
 
     public function destroy(string $type, int $record): RedirectResponse
     {
         $definition = SharedMasterRegistry::get($type);
-        $this->record($definition['model'], $record)->delete();
+        $item = $this->record($definition['model'], $record);
+        $parentId = isset($definition['parent']) ? (int) $item->{$definition['parent']['field']} : null;
+        $item->delete();
 
-        return $this->backTo($type, 'Entry archived. Existing historical references remain safe.');
+        return $this->backTo($type, 'Entry archived. Existing historical references remain safe.', $parentId);
     }
 
     private function validated(Request $request, SharedMaster $record, array $definition): array
@@ -89,8 +110,8 @@ class SharedMasterController extends Controller
         return $model::query()->findOrFail($id);
     }
 
-    private function backTo(string $type, string $message): RedirectResponse
+    private function backTo(string $type, string $message, ?int $parentId = null): RedirectResponse
     {
-        return redirect()->route('admin.shared-masters.index', ['type' => $type])->with('status', $message);
+        return redirect()->route('admin.shared-masters.index', array_filter(['type' => $type, 'parent' => $parentId]))->with('status', $message);
     }
 }

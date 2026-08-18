@@ -16,7 +16,7 @@
         <div><label class="form-label">Vacancies *</label><input class="form-control" type="number" min="1" name="vacancies" value="{{ old('vacancies',$jobPosting->vacancies ?: 1) }}" required></div>
         <div><label class="form-label">Minimum salary</label><input class="form-control" type="number" min="0" step="0.01" name="salary_min" value="{{ old('salary_min',$jobPosting->salary_min) }}"></div>
         <div><label class="form-label">Maximum salary</label><input class="form-control" type="number" min="0" step="0.01" name="salary_max" value="{{ old('salary_max',$jobPosting->salary_max) }}"></div>
-        <div><label class="form-label">Currency</label><input class="form-control text-uppercase" name="currency" maxlength="3" value="{{ old('currency',$jobPosting->currency ?: 'INR') }}" required></div>
+        <div><label class="form-label">Currency</label><x-currency-select :selected="$jobPosting->currency ?: \App\Support\Currency::DEFAULT" /></div>
         <div><label class="form-label">Application deadline</label><input class="form-control" type="date" name="application_deadline" value="{{ old('application_deadline',$jobPosting->application_deadline?->format('Y-m-d')) }}"></div>
         <div class="profile-span"><label class="form-label">Description *</label><textarea class="form-control" name="description" rows="5" required>{{ old('description',$jobPosting->description) }}</textarea></div>
         <div class="profile-span"><label class="form-label">Requirements</label><textarea class="form-control" name="requirements" rows="4">{{ old('requirements',$jobPosting->requirements) }}</textarea></div>

@@ -28,7 +28,9 @@
         <div></div>
         <div><label class="form-label">Address line 1</label><input class="form-control" name="address_line_1" value="{{ old('address_line_1',$profile->address_line_1) }}"></div>
         <div><label class="form-label">Address line 2</label><input class="form-control" name="address_line_2" value="{{ old('address_line_2',$profile->address_line_2) }}"></div>
-        @foreach(['city'=>'City','state'=>'State / Province','postal_code'=>'Postal code','country'=>'Country *'] as $field=>$label)<div><label class="form-label">{{ $label }}</label><input class="form-control" name="{{ $field }}" @required($field==='country') value="{{ old($field,$profile->{$field} ?: ($field==='country'?'India':'')) }}"></div>@endforeach
+        <div><label class="form-label">City</label><input class="form-control" name="city" value="{{ old('city',$profile->city) }}"></div>
+        <div><label class="form-label">Postal code</label><input class="form-control" name="postal_code" value="{{ old('postal_code',$profile->postal_code) }}"></div>
+        <x-recruiter-location-fields :$countries :country="old('country', $profile->country ?: 'India')" :state="old('state', $profile->state)" :district="old('district', $profile->district)" />
     </div>
     <button class="btn btn-portal mt-3"><i class="bi bi-check2-circle"></i> Save contact detail</button>
 </form>

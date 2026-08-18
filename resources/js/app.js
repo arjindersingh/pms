@@ -91,7 +91,7 @@ Alpine.data('portalShell', () => ({
 Livewire.start();
 
 const enhanceSelect = select => {
-    if (select.dataset.enhanced || select.multiple) return;
+    if (select.dataset.enhanced) return;
     select.dataset.enhanced = 'true';
 
     const root = document.createElement('div');
@@ -111,7 +111,29 @@ const enhanceSelect = select => {
     const options = document.createElement('div');
     options.className = 'portal-select-options';
     options.setAttribute('role', 'listbox');
+    if (select.multiple) options.setAttribute('aria-multiselectable', 'true');
     panel.append(search, options);
+    if (select.multiple) {
+        const actions = document.createElement('div');
+        actions.className = 'portal-select-actions';
+        const clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'portal-select-clear';
+        clear.textContent = 'Clear all';
+        const done = document.createElement('button');
+        done.type = 'button';
+        done.className = 'portal-select-done';
+        done.textContent = 'Done';
+        clear.addEventListener('click', () => {
+            Array.from(select.options).forEach(option => { option.selected = false; });
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            trigger.textContent = label();
+            render();
+        });
+        done.addEventListener('click', () => { close(); trigger.focus(); });
+        actions.append(clear, done);
+        panel.append(actions);
+    }
     root.append(trigger, panel);
     select.before(root);
     root.append(select);
@@ -123,25 +145,41 @@ const enhanceSelect = select => {
         search.value = '';
         render();
     };
-    const label = () => select.selectedOptions[0]?.text || 'Select an option';
+    const optionLabel = option => option.parentElement instanceof HTMLOptGroupElement
+        ? `${option.parentElement.label} · ${option.text}`
+        : option.text;
+    const label = () => {
+        if (!select.multiple) return select.selectedOptions[0]?.text || select.dataset.placeholder || 'Select an option';
+        const selected = Array.from(select.selectedOptions);
+        if (!selected.length) return select.dataset.placeholder || 'Select one or more';
+        if (selected.length === 1) return optionLabel(selected[0]);
+        return `${selected.length} selected`;
+    };
     const render = () => {
         const query = search.value.trim().toLocaleLowerCase();
         options.replaceChildren();
         Array.from(select.options).forEach(option => {
-            if (option.disabled || (query && !option.text.toLocaleLowerCase().includes(query))) return;
+            const text = optionLabel(option);
+            if (option.disabled || (query && !text.toLocaleLowerCase().includes(query))) return;
             const item = document.createElement('button');
             item.type = 'button';
             item.className = 'portal-select-option';
-            item.textContent = option.text;
+            const marker = document.createElement('span');
+            marker.className = 'portal-select-marker';
+            marker.textContent = option.selected ? '✓' : '';
+            const copy = document.createElement('span');
+            copy.textContent = text;
+            item.append(marker, copy);
             item.setAttribute('role', 'option');
             item.setAttribute('aria-selected', String(option.selected));
             if (option.selected) item.classList.add('selected');
             item.addEventListener('click', () => {
-                select.value = option.value;
+                if (select.multiple) option.selected = !option.selected;
+                else select.value = option.value;
                 select.dispatchEvent(new Event('change', { bubbles: true }));
                 trigger.textContent = label();
-                close();
-                trigger.focus();
+                if (select.multiple) render();
+                else { close(); trigger.focus(); }
             });
             options.append(item);
         });
@@ -170,11 +208,11 @@ const enhanceSelect = select => {
     select.form?.addEventListener('reset', () => setTimeout(() => { trigger.textContent = label(); render(); }, 0));
 };
 
-document.querySelectorAll('form select:not([multiple]):not([data-native-select])').forEach(enhanceSelect);
+document.querySelectorAll('form select:not([data-native-select])').forEach(enhanceSelect);
 new MutationObserver(mutations => mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
     if (!(node instanceof HTMLElement)) return;
-    if (node.matches?.('form select:not([multiple]):not([data-native-select])')) enhanceSelect(node);
-    node.querySelectorAll?.('form select:not([multiple]):not([data-native-select])').forEach(enhanceSelect);
+    if (node.matches?.('form select:not([data-native-select])')) enhanceSelect(node);
+    node.querySelectorAll?.('form select:not([data-native-select])').forEach(enhanceSelect);
 }))).observe(document.body, { childList: true, subtree: true });
 document.addEventListener('click', event => {
     document.querySelectorAll('.portal-select.open').forEach(root => {
@@ -325,4 +363,123 @@ document.querySelectorAll('[data-saved-subject-chips]').forEach(chips => {
             if (!chips.querySelector('.subject-chip')) { const empty = document.createElement('span'); empty.className = 'text-secondary'; empty.textContent = 'No subjects selected'; chips.append(empty); }
         } catch (error) { button.disabled = false; }
     });
+});
+
+const formControlLabel = control => {
+    const labelledBy = control.getAttribute('aria-labelledby');
+    const explicitLabel = control.id
+        ? document.querySelector(`label[for="${CSS.escape(control.id)}"]`)
+        : null;
+    const label = labelledBy
+        ? document.getElementById(labelledBy)
+        : explicitLabel || control.closest('label');
+    const fallback = control.getAttribute('aria-label')
+        || control.placeholder
+        || control.name?.replaceAll('[]', '').replaceAll('_', ' ')
+        || control.value;
+
+    return (label?.textContent || fallback || 'this field')
+        .replace(/\s+/g, ' ')
+        .replace(/\s*\*\s*$/, '')
+        .trim();
+};
+
+const formControlTooltip = control => {
+    const label = formControlLabel(control);
+
+    if (control.matches('button, input[type="submit"], input[type="button"], input[type="reset"]')) {
+        return label;
+    }
+    if (control.matches('input[type="checkbox"], input[type="radio"]')) {
+        return `Toggle ${label}`;
+    }
+    if (control.matches('select')) {
+        return `${control.multiple ? 'Select one or more' : 'Select'} ${label}`;
+    }
+    if (control.matches('input[type="file"]')) {
+        return `Upload ${label}`;
+    }
+    if (control.matches('input[type="date"], input[type="datetime-local"], input[type="month"], input[type="time"]')) {
+        return `Choose ${label}`;
+    }
+    if (control.matches('input[type="search"]')) {
+        return `Search ${label}`;
+    }
+
+    return `Enter ${label}`;
+};
+
+const addFormTooltip = control => {
+    if (control.dataset.tooltip === 'off' || control.matches('input[type="hidden"]')) return;
+
+    const tooltipTarget = control.matches('select')
+        ? control.closest('.portal-select')?.querySelector('.portal-select-trigger') || control
+        : control;
+    const tooltip = tooltipTarget.getAttribute('title') || control.getAttribute('title') || formControlTooltip(control);
+
+    tooltipTarget.setAttribute('title', tooltip);
+    tooltipTarget.setAttribute('data-bs-toggle', 'tooltip');
+    tooltipTarget.setAttribute('data-bs-placement', 'top');
+    bootstrap.Tooltip.getOrCreateInstance(tooltipTarget, { trigger: 'hover focus' });
+};
+
+const addFormTooltips = root => {
+    const controls = root.matches?.('form input, form select, form textarea, form button')
+        ? [root]
+        : root.querySelectorAll?.('form input, form select, form textarea, form button') || [];
+
+    controls.forEach(addFormTooltip);
+};
+
+addFormTooltips(document);
+new MutationObserver(mutations => mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
+    if (node instanceof HTMLElement) addFormTooltips(node);
+}))).observe(document.body, { childList: true, subtree: true });
+
+const replaceLocationOptions = (select, placeholder, records, selected) => {
+    select.replaceChildren();
+    const empty = new Option(placeholder, '');
+    select.add(empty);
+    records.forEach(record => {
+        const option = new Option(record.display_name, record.display_name, false, record.display_name === selected);
+        option.dataset.id = record.id;
+        select.add(option);
+    });
+    select.disabled = records.length === 0;
+    select.closest('.portal-select')?.querySelector('.portal-select-trigger')?.toggleAttribute('disabled', select.disabled);
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+};
+
+document.querySelectorAll('[data-location-fields]').forEach(fields => {
+    const country = fields.querySelector('[data-location-country]');
+    const state = fields.querySelector('[data-location-state]');
+    const district = fields.querySelector('[data-location-district]');
+    let populatingState = false;
+
+    const loadDistricts = async selected => {
+        const stateId = state.selectedOptions[0]?.dataset.id;
+        if (!stateId) {
+            replaceLocationOptions(district, 'Select district', [], '');
+            return;
+        }
+        const response = await fetch(fields.dataset.districtsUrl.replace('__STATE__', encodeURIComponent(stateId)), { headers: { Accept: 'application/json' } });
+        replaceLocationOptions(district, 'Select district', response.ok ? await response.json() : [], selected);
+    };
+    const loadStates = async (selectedState, selectedDistrict) => {
+        const countryCode = country.selectedOptions[0]?.dataset.code;
+        if (!countryCode) {
+            replaceLocationOptions(state, 'Select state / province', [], '');
+            replaceLocationOptions(district, 'Select district', [], '');
+            return;
+        }
+        const response = await fetch(fields.dataset.statesUrl.replace('__COUNTRY__', encodeURIComponent(countryCode)), { headers: { Accept: 'application/json' } });
+        populatingState = true;
+        replaceLocationOptions(state, 'Select state / province', response.ok ? await response.json() : [], selectedState);
+        populatingState = false;
+        await loadDistricts(selectedDistrict);
+    };
+
+    country.addEventListener('change', () => loadStates('', ''));
+    state.addEventListener('change', () => { if (!populatingState) loadDistricts(''); });
+    loadStates(state.dataset.selected, district.dataset.selected);
 });

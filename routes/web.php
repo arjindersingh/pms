@@ -13,10 +13,11 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobSearchProfileController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PaymentWebhookController;
-use App\Http\Controllers\RegistrationController;
-use App\Http\Controllers\Recruiter\ProfileController as RecruiterProfileController;
 use App\Http\Controllers\Recruiter\JobPostingController;
+use App\Http\Controllers\Recruiter\ProfileController as RecruiterProfileController;
+use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\Talent\CandidateProfileController;
 use App\Http\Controllers\Talent\SubscriptionController as TalentSubscriptionController;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +36,11 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logout', [AuthController::class, 'destroy'])->middleware('auth')->name('logout');
+
+Route::middleware('auth')->prefix('locations')->name('locations.')->group(function () {
+    Route::get('/countries/{country:code}/states', [LocationController::class, 'states'])->name('states');
+    Route::get('/states/{state}/districts', [LocationController::class, 'districts'])->name('districts');
+});
 
 Route::middleware('auth')->prefix('account')->name('account.')->group(function () {
     Route::get('/profile', [AccountController::class, 'editProfile'])->name('profile');
@@ -117,6 +123,11 @@ Route::middleware(['auth', 'category:talent', 'module:career'])->prefix('talent'
     Route::put('/job-preferences', [JobSearchProfileController::class, 'updateTalent'])->middleware('menu:job-preferences,update')->name('job-preferences.update');
     Route::get('/subscription', [TalentSubscriptionController::class, 'show'])->name('subscription.show');
     Route::post('/subscription/renew', [TalentSubscriptionController::class, 'renew'])->middleware('throttle:10,1')->name('subscription.renew');
+    foreach (['personal', 'photograph', 'contact', 'education', 'experience', 'projects', 'recognitions', 'memberships', 'references', 'social', 'declarations', 'publications', 'skills', 'talents', 'hobbies', 'preferences'] as $profileSection) {
+        Route::get("/profile/{$profileSection}", [CandidateProfileController::class, 'edit'])
+            ->defaults('tab', $profileSection)
+            ->name("profile.page.{$profileSection}");
+    }
     Route::get('/profile/{tab?}', [CandidateProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile/{tab}', [CandidateProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/photograph', [CandidateProfileController::class, 'photograph'])->name('profile.photograph');

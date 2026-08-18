@@ -104,13 +104,29 @@ class DatabaseSeeder extends Seeder
         ];
 
         $talentDashboard = $this->menu($career, 'Dashboard', 'talent-dashboard', 'talent.dashboard', 'bi-speedometer2', 10);
-        $careerWorkspace = $this->menu($career, 'My Career', 'career-workspace', null, 'bi-compass', 20);
-        $opportunities = $this->menu($career, 'Opportunities', 'opportunities', null, 'bi-search', 10, $careerWorkspace);
-        $applications = $this->menu($career, 'Applications', 'applications', null, 'bi-file-earmark-person', 20, $careerWorkspace);
+        $candidateProfile = $this->menu($career, 'Candidate Profile', 'candidate-profile', null, 'bi-person-vcard', 20);
+        $jobPreferences = $this->menu($career, 'Job Preferences', 'job-preferences', 'talent.job-preferences.edit', 'bi-sliders2', 30);
+        $opportunities = $this->menu($career, 'Opportunities', 'opportunities', null, 'bi-search', 40);
+        $applications = $this->menu($career, 'Applications', 'applications', null, 'bi-file-earmark-person', 50);
+        $candidateProfileMenus = collect([
+            ['Personal', 'personal', 'bi-person'],
+            ['Photograph', 'photograph', 'bi-camera'],
+            ['Contact & Address', 'contact', 'bi-geo-alt'],
+            ['Education', 'education', 'bi-mortarboard'],
+            ['Experience', 'experience', 'bi-briefcase'],
+            ['Projects', 'projects', 'bi-kanban'],
+            ['Awards & Achievements', 'recognitions', 'bi-trophy'],
+            ['Professional Memberships', 'memberships', 'bi-person-badge'],
+            ['References', 'references', 'bi-people'],
+            ['Social & Professional Profiles', 'social', 'bi-share'],
+            ['Declarations & Consent', 'declarations', 'bi-shield-check'],
+            ['Publications', 'publications', 'bi-journal-richtext'],
+            ['Skills & Languages', 'skills', 'bi-tools'],
+            ['Talents', 'talents', 'bi-stars'],
+            ['Hobbies & Interests', 'hobbies', 'bi-heart'],
+        ])->map(fn (array $definition, int $index) => $this->menu($career, $definition[0], 'candidate-profile-'.$definition[1], 'talent.profile.page.'.$definition[1], $definition[2], ($index + 1) * 10, $candidateProfile))->all();
         $talentMenus = [
-            $talentDashboard, $careerWorkspace, $opportunities, $applications,
-            $this->menu($career, 'Job Preferences', 'job-preferences', 'talent.job-preferences.edit', 'bi-sliders2', 15, $careerWorkspace),
-            $this->menu($career, 'Candidate Profile', 'candidate-profile', 'talent.profile.edit', 'bi-person-vcard', 10, $careerWorkspace),
+            $talentDashboard, $candidateProfile, ...$candidateProfileMenus, $jobPreferences, $opportunities, $applications,
             $this->menu($career, 'Recommended Jobs', 'find-jobs', null, 'bi-stars', 10, $opportunities),
             $this->menu($career, 'Saved Jobs', 'saved-jobs', null, 'bi-bookmark-heart', 20, $opportunities),
             $this->menu($career, 'Active Applications', 'my-applications', null, 'bi-hourglass-split', 10, $applications),
@@ -173,7 +189,7 @@ class DatabaseSeeder extends Seeder
         $this->masterRecords(Gender::class, [['MALE', 'Male'], ['FEMALE', 'Female'], ['NON_BINARY', 'Non-binary'], ['UNDISCLOSED', 'Prefer not to disclose']]);
         $this->masterRecords(MaritalStatus::class, [['SINGLE', 'Single'], ['MARRIED', 'Married'], ['DIVORCED', 'Divorced'], ['WIDOWED', 'Widowed']]);
         $this->masterRecords(AcademicClass::class, [['CLASS_8', 'Class 8'], ['CLASS_10', 'Class 10'], ['CLASS_12', 'Class 12']]);
-        $this->masterRecords(Country::class, [['IN', 'India'], ['US', 'United States'], ['GB', 'United Kingdom'], ['CA', 'Canada'], ['AU', 'Australia'], ['NZ', 'New Zealand'], ['AE', 'United Arab Emirates'], ['SG', 'Singapore'], ['DE', 'Germany'], ['FR', 'France'], ['IE', 'Ireland'], ['JP', 'Japan'], ['CN', 'China'], ['BD', 'Bangladesh'], ['BT', 'Bhutan'], ['NP', 'Nepal'], ['LK', 'Sri Lanka'], ['PK', 'Pakistan'], ['ZA', 'South Africa'], ['SA', 'Saudi Arabia'], ['QA', 'Qatar'], ['OM', 'Oman'], ['KW', 'Kuwait'], ['MY', 'Malaysia'], ['ID', 'Indonesia']]);
+        $this->seedWorldGeography();
         $this->masterRecords(Language::class, [['EN', 'English'], ['HI', 'Hindi'], ['PA', 'Punjabi'], ['BN', 'Bengali'], ['MR', 'Marathi'], ['TE', 'Telugu'], ['TA', 'Tamil'], ['GU', 'Gujarati'], ['UR', 'Urdu'], ['KN', 'Kannada'], ['ML', 'Malayalam'], ['OR', 'Odia'], ['AS', 'Assamese']]);
         $this->masterRecords(StudyMode::class, [['REGULAR', 'Regular'], ['DISTANCE', 'Distance'], ['ONLINE', 'Online'], ['PART_TIME', 'Part-time']]);
         $this->masterRecords(EmploymentType::class, [['FULL_TIME', 'Full-time'], ['PART_TIME', 'Part-time'], ['PERMANENT', 'Permanent'], ['CONTRACT', 'Contract'], ['INTERNSHIP', 'Internship'], ['APPRENTICE', 'Apprenticeship'], ['TEMPORARY', 'Temporary'], ['FREELANCE', 'Freelance'], ['CONSULTANCY', 'Consultancy']]);
@@ -259,6 +275,43 @@ class DatabaseSeeder extends Seeder
         foreach (['Amritsar', 'Barnala', 'Bathinda', 'Faridkot', 'Fatehgarh Sahib', 'Fazilka', 'Ferozepur', 'Gurdaspur', 'Hoshiarpur', 'Jalandhar', 'Kapurthala', 'Ludhiana', 'Malerkotla', 'Mansa', 'Moga', 'Pathankot', 'Patiala', 'Rupnagar', 'Sahibzada Ajit Singh Nagar', 'Sangrur', 'Shaheed Bhagat Singh Nagar', 'Sri Muktsar Sahib', 'Tarn Taran'] as $i => $name) {
             District::updateOrCreate(['state_id' => $punjab->id, 'code' => strtoupper(str_replace(' ', '_', $name))], ['display_name' => $name, 'short_name' => $name, 'sort_order' => ($i + 1) * 10, 'is_active' => true]);
         }
+    }
+
+    private function seedWorldGeography(): void
+    {
+        $now = now();
+        $countries = json_decode(file_get_contents(database_path('data/iso_3166_1.json')), true, flags: JSON_THROW_ON_ERROR)['3166-1'];
+        $countryRows = collect($countries)->sortBy('name')->values()->map(fn (array $country, int $index): array => [
+            'code' => $country['alpha_2'],
+            'short_name' => $country['name'],
+            'display_name' => $country['name'],
+            'description' => null,
+            'sort_order' => $country['alpha_2'] === 'IN' ? 0 : ($index + 1) * 10,
+            'is_active' => true,
+            'created_at' => $now,
+            'updated_at' => $now,
+            'deleted_at' => null,
+        ])->all();
+        Country::upsert($countryRows, ['code'], ['short_name', 'display_name', 'sort_order', 'is_active', 'updated_at', 'deleted_at']);
+
+        $countryIds = Country::query()->pluck('id', 'code');
+        $subdivisions = json_decode(file_get_contents(database_path('data/iso_3166_2.json')), true, flags: JSON_THROW_ON_ERROR)['3166-2'];
+        collect($subdivisions)->map(function (array $subdivision, int $index) use ($countryIds, $now): array {
+            [$countryCode, $subdivisionCode] = explode('-', $subdivision['code'], 2);
+
+            return [
+                'country_id' => $countryIds[$countryCode],
+                'code' => $subdivisionCode,
+                'short_name' => $subdivision['name'],
+                'display_name' => $subdivision['name'],
+                'description' => $subdivision['type'] ?? null,
+                'sort_order' => ($index + 1) * 10,
+                'is_active' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+                'deleted_at' => null,
+            ];
+        })->chunk(500)->each(fn ($rows) => State::upsert($rows->all(), ['country_id', 'code'], ['short_name', 'display_name', 'description', 'sort_order', 'is_active', 'updated_at', 'deleted_at']));
     }
 
     private function seedDegrees(): void
@@ -361,7 +414,8 @@ class DatabaseSeeder extends Seeder
             $limit = $plan->slug === 'free' ? 2 : ($plan->slug === 'intermediate' ? max(2, (int) ceil(count($menus) * .65)) : count($menus));
             $plan->menus()->sync(collect($menus)->mapWithKeys(function (PortalMenu $menu, int $index) use ($plan, $limit) {
                 $jobHierarchy = in_array($menu->slug, ['hiring-workspace', 'jobs', 'job-postings', 'create-job'], true);
-                $enabled = $jobHierarchy || $index < $limit || ($plan->slug === 'free' && $menu->route_name !== null);
+                $candidateProfileHierarchy = $menu->slug === 'candidate-profile' || str_starts_with($menu->slug, 'candidate-profile-');
+                $enabled = $jobHierarchy || $candidateProfileHierarchy || $index < $limit || ($plan->slug === 'free' && $menu->route_name !== null);
                 $essential = in_array($menu->slug, ['job-preferences', 'candidate-search'], true);
                 $jobManagement = in_array($menu->slug, ['job-postings', 'create-job'], true);
 

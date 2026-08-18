@@ -23,20 +23,6 @@
                 </template>
             </div>
         </div>
-        <div class="dropdown">
-            <button class="header-action module-launcher" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-label="Open modules"><i class="bi bi-grid-3x3-gap-fill"></i></button>
-            <div class="dropdown-menu dropdown-menu-end module-menu border-0 shadow-lg p-3">
-                <div class="dropdown-heading"><strong>Modules</strong><small>Your available workspaces</small></div>
-                <div class="module-grid">
-                    @foreach($portalNavigation as $module)
-                        @php($moduleRoute = $module->menus->first(fn ($menu) => $menu->route_name && Route::has($menu->route_name))?->route_name)
-                        <a class="module-tile {{ $moduleRoute ? '' : 'disabled' }}" href="{{ $moduleRoute ? route($moduleRoute) : '#' }}">
-                            <span><i class="bi {{ $module->icon }}"></i></span><small>{{ $module->name }}</small>
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        </div>
         <button class="header-action position-relative" type="button" aria-label="Notifications"><i class="bi bi-bell"></i><span class="notification-dot"></span></button>
         <div class="dropdown">
             <button class="profile-trigger" data-bs-toggle="dropdown" aria-expanded="false">

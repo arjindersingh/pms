@@ -73,6 +73,27 @@ class SubscriptionPlanTest extends TestCase
         }
     }
 
+    public function test_currency_is_selected_from_the_world_currency_list_and_defaults_to_inr(): void
+    {
+        $admin = User::where('email', 'admin@example.com')->firstOrFail();
+
+        $this->actingAs($admin)->get(route('admin.subscription-plans.create'))
+            ->assertOk()
+            ->assertSee('value="INR" selected', false)
+            ->assertSee('value="USD"', false)
+            ->assertSee('value="ZWL"', false);
+
+        $this->post(route('admin.subscription-plans.store'), [
+            'category' => 'talent',
+            'name' => 'Invalid currency plan',
+            'price' => 10,
+            'currency' => 'ABC',
+            'billing_period' => 'monthly',
+            'position' => 200,
+            'is_active' => 1,
+        ])->assertSessionHasErrors('currency');
+    }
+
     public function test_free_plan_is_always_saved_with_na_billing_period(): void
     {
         $admin = User::where('email', 'admin@example.com')->firstOrFail();

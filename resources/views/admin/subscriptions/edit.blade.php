@@ -12,7 +12,7 @@
 <div><label class="form-label">Plan name</label><input class="form-control" name="name" required value="{{ old('name', $plan->name) }}"></div>
 <div class="profile-span"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="2">{{ old('description', $plan->description) }}</textarea></div>
 <div><label class="form-label">Price</label><input class="form-control" name="price" type="number" min="0" step="0.01" required value="{{ old('price', $plan->price ?? 0) }}"></div>
-<div><label class="form-label">Currency</label><input class="form-control text-uppercase" name="currency" maxlength="3" required value="{{ old('currency', $plan->currency) }}"></div>
+<div><label class="form-label">Currency</label><x-currency-select :selected="$plan->currency ?: \App\Support\Currency::DEFAULT" /></div>
 <div><label class="form-label">Billing period</label><select class="form-select" name="billing_period">@foreach(\App\Models\SubscriptionPlan::BILLING_PERIODS as $period => $label)<option value="{{ $period }}" @selected(old('billing_period',$plan->billing_period)===$period)>{{ $label }}</option>@endforeach</select><small class="text-muted">Free plans are automatically saved as N/A.</small></div>
 <div><label class="form-label">Display order</label><input class="form-control" name="position" type="number" min="0" required value="{{ old('position', $plan->position ?? 0) }}"></div>
 <div class="profile-span form-check form-switch"><input type="hidden" name="is_active" value="0"><input class="form-check-input" type="checkbox" name="is_active" value="1" id="is-active" @checked(old('is_active',$plan->is_active))><label class="form-check-label" for="is-active">Plan is available for assignment</label></div>

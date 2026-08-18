@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Country;
+use App\Models\District;
 use App\Models\EducationalInstitution;
 use App\Models\OrganizationCategory;
 use App\Models\OrganizationPost;
 use App\Models\QualificationLevel;
+use App\Models\State;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,6 +44,57 @@ class SharedMastersTest extends TestCase
 
         $institutions = EducationalInstitution::available()->pluck('display_name');
         $this->assertSame('Other / Institution not listed', $institutions->last());
+    }
+
+    public function test_world_countries_and_subdivisions_are_seeded(): void
+    {
+        $india = Country::query()->where('code', 'IN')->firstOrFail();
+
+        $this->assertSame(249, Country::query()->count());
+        $this->assertSame(5046, State::query()->count());
+        $this->assertSame(36, $india->states()->count());
+        $this->assertDatabaseHas('countries', ['code' => 'ZW', 'display_name' => 'Zimbabwe', 'is_active' => true]);
+    }
+
+    public function test_administrator_can_manage_country_state_and_district_hierarchy(): void
+    {
+        $administrator = User::query()->where('email', 'admin@example.com')->firstOrFail();
+        $unitedStates = Country::query()->where('code', 'US')->firstOrFail();
+
+        $this->actingAs($administrator)->get(route('admin.shared-masters.index', ['type' => 'states', 'parent' => $unitedStates->id]))
+            ->assertOk()
+            ->assertSee('States / Provinces')
+            ->assertSee('California')
+            ->assertSee('Show states / provinces for country');
+
+        $this->post(route('admin.shared-masters.store', 'states'), [
+            'country_id' => $unitedStates->id,
+            'code' => 'TEST',
+            'display_name' => 'Test Province',
+            'sort_order' => 99990,
+            'is_active' => '1',
+        ])->assertSessionHasNoErrors();
+
+        $state = State::query()->whereBelongsTo($unitedStates)->where('code', 'TEST')->firstOrFail();
+
+        $this->post(route('admin.shared-masters.store', 'districts'), [
+            'state_id' => $state->id,
+            'code' => 'CENTRAL',
+            'display_name' => 'Central District',
+            'sort_order' => 10,
+            'is_active' => '1',
+        ])->assertSessionHasNoErrors();
+
+        $district = District::query()->whereBelongsTo($state)->where('code', 'CENTRAL')->firstOrFail();
+        $this->put(route('admin.shared-masters.update', ['districts', $district]), [
+            'state_id' => $state->id,
+            'code' => 'CENTRAL',
+            'display_name' => 'Central District',
+            'sort_order' => 10,
+            'is_active' => '0',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertFalse($district->fresh()->is_active);
     }
 
     public function test_administrator_can_manage_shared_master_values(): void

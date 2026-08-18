@@ -11,9 +11,11 @@
 @endphp
 <aside class="portal-sidebar" @keydown.escape.window="sidebarOpen = false">
     <div class="sidebar-mobile-head d-lg-none"><span>Navigation</span><button type="button" @click="sidebarOpen = false"><i class="bi bi-x-lg"></i></button></div>
-    @unless($portalArea === 'recruiter')
-        <div class="sidebar-context"><span class="context-icon"><i class="bi {{ $sidebarNavigation->first()?->icon ?? 'bi-grid' }}"></i></span><span class="sidebar-label"><small>Workspace</small><strong>{{ $portalTheme['eyebrow'] }}</strong></span></div>
-    @endunless
+    @if($portalArea === 'talent')
+        <a class="sidebar-context sidebar-context-link" href="{{ route('talent.dashboard') }}" title="Dashboard"><span class="context-icon"><i class="bi bi-speedometer2"></i></span><span class="sidebar-label"><strong>Dashboard</strong></span></a>
+    @else
+        <div class="sidebar-context"><span class="context-icon"><i class="bi {{ $sidebarNavigation->first()?->icon ?? 'bi-grid' }}"></i></span><span class="sidebar-label">@if($portalArea === 'administrator')<small>Workspace</small>@endif<strong>{{ $portalTheme['eyebrow'] }}</strong></span></div>
+    @endif
     <nav class="sidebar-nav">
         @foreach($sidebarNavigation as $module)
             <div class="sidebar-module">
@@ -21,6 +23,7 @@
                     <div class="sidebar-section-label"><span class="sidebar-label">{{ $module->name }}</span></div>
                 @endunless
                 @foreach($module->menus->whereNull('parent_id') as $levelOne)
+                    @continue($portalArea === 'talent' && $levelOne->slug === 'talent-dashboard')
                     @php
                         $levelTwoMenus = $module->menus->where('parent_id', $levelOne->id);
                         $available = $levelOne->route_name && Route::has($levelOne->route_name);
@@ -30,8 +33,8 @@
                     @if($levelTwoMenus->isEmpty())
                         <a class="sidebar-link {{ $active ? 'active' : '' }} {{ $available ? '' : 'disabled' }}" href="{{ $available ? route($levelOne->route_name) : '#' }}" title="{{ $levelOne->name }}"><i class="bi {{ $levelOne->icon }}"></i><span class="sidebar-label">{{ $levelOne->name }}</span></a>
                     @else
-                        <button class="sidebar-link sidebar-parent" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $menuId }}" aria-expanded="true" title="{{ $levelOne->name }}"><i class="bi {{ $levelOne->icon }}"></i><span class="sidebar-label">{{ $levelOne->name }}</span><i class="bi bi-chevron-down sidebar-chevron"></i></button>
-                        <div class="collapse show sidebar-submenu" id="{{ $menuId }}">
+                        <button class="sidebar-link sidebar-parent collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#{{ $menuId }}" aria-expanded="false" title="{{ $levelOne->name }}"><i class="bi {{ $levelOne->icon }}"></i><span class="sidebar-label">{{ $levelOne->name }}</span><i class="bi bi-chevron-down sidebar-chevron"></i></button>
+                        <div class="collapse sidebar-submenu" id="{{ $menuId }}">
                             @foreach($levelTwoMenus as $levelTwo)
                                 @php
                                     $levelThreeMenus = $module->menus->where('parent_id', $levelTwo->id);

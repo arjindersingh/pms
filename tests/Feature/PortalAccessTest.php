@@ -82,18 +82,42 @@ class PortalAccessTest extends TestCase
     public function test_each_dashboard_renders_its_own_theme_and_navigation_hierarchy(): void
     {
         foreach ([
-            'admin@example.com' => [route('admin.dashboard'), 'data-portal-area="administrator"', 'Access Control', 'Permission Setup'],
-            'recruiter@example.com' => [route('recruiter.dashboard'), 'data-portal-area="recruiter"', 'Hiring Workspace', 'Candidates'],
-            'talent@example.com' => [route('talent.dashboard'), 'data-portal-area="talent"', 'My Career', 'Opportunities'],
-        ] as $email => [$dashboard, $theme, $levelOne, $levelTwo]) {
+            'admin@example.com' => [route('admin.dashboard'), 'data-portal-area="administrator"', 'Portal control center', 'Access Control', 'Permission Setup'],
+            'recruiter@example.com' => [route('recruiter.dashboard'), 'data-portal-area="recruiter"', 'Recruiter', 'Talent Acquisition Hub', 'Candidate Search'],
+            'talent@example.com' => [route('talent.dashboard'), 'data-portal-area="talent"', 'Dashboard', 'Candidate Profile', 'Personal'],
+        ] as $email => [$dashboard, $theme, $context, $levelOne, $levelTwo]) {
+            $user = User::query()->where('email', $email)->firstOrFail();
+
+            $response = $this->actingAs($user)->get($dashboard)
+                ->assertOk()
+                ->assertSee($theme, false)
+                ->assertSee($context)
+                ->assertSee($levelOne)
+                ->assertSee($levelTwo);
+
+            if ($email === 'talent@example.com') {
+                $response->assertSee('class="sidebar-context sidebar-context-link" href="'.route('talent.dashboard').'"', false);
+            }
+
+            $response
+                ->assertSee('sidebar-link sidebar-parent collapsed', false)
+                ->assertDontSee('collapse show sidebar-submenu', false);
+        }
+    }
+
+    public function test_dashboards_do_not_render_a_module_launcher(): void
+    {
+        foreach ([
+            'admin@example.com' => route('admin.dashboard'),
+            'recruiter@example.com' => route('recruiter.dashboard'),
+            'talent@example.com' => route('talent.dashboard'),
+        ] as $email => $dashboard) {
             $user = User::query()->where('email', $email)->firstOrFail();
 
             $this->actingAs($user)->get($dashboard)
                 ->assertOk()
-                ->assertSee($theme, false)
-                ->assertSee($levelOne)
-                ->assertSee($levelTwo)
-                ->assertSee('QUICK ACCESS');
+                ->assertDontSee('aria-label="Open modules"', false)
+                ->assertDontSee('Your available workspaces');
         }
     }
 

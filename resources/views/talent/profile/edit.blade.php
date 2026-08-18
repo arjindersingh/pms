@@ -4,7 +4,6 @@
 <div class="dashboard-heading"><div><span class="dashboard-kicker">CANDIDATE PROFILE · {{ $profile->profile_code }}</span><h1>{{ $tabs[$tab] }}</h1><p>Build a verified, searchable profile recruiters can understand quickly.</p></div></div>
 @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-<nav class="profile-tabs">@foreach($tabs as $key=>$label)<a class="{{ $tab===$key?'active':'' }}" href="{{ route('talent.profile.edit',$key) }}">{{ $label }}</a>@endforeach</nav>
 
 @if($tab==='photograph') @include('talent.profile.photograph')
 @elseif(in_array($tab,['personal','contact','preferences']))<form method="POST" action="{{ route('talent.profile.update',$tab) }}">@csrf @method('PUT')<section class="dashboard-card profile-form-card"><div class="profile-form-grid">

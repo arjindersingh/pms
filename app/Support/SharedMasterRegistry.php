@@ -7,6 +7,7 @@ use App\Models\ConsentType;
 use App\Models\Country;
 use App\Models\DeclarationType;
 use App\Models\Degree;
+use App\Models\District;
 use App\Models\EducationalInstitution;
 use App\Models\EducationAuthority;
 use App\Models\EmploymentType;
@@ -31,6 +32,7 @@ use App\Models\ReferenceType;
 use App\Models\Skill;
 use App\Models\SkillGroup;
 use App\Models\SocialPlatform;
+use App\Models\State;
 use App\Models\StudyMode;
 use App\Models\Subject;
 use App\Models\Talent;
@@ -68,6 +70,8 @@ final class SharedMasterRegistry
         'genders' => ['label' => 'Genders', 'model' => Gender::class, 'icon' => 'bi-person'],
         'marital-statuses' => ['label' => 'Marital Statuses', 'model' => MaritalStatus::class, 'icon' => 'bi-people'],
         'countries' => ['label' => 'Countries', 'model' => Country::class, 'icon' => 'bi-globe'],
+        'states' => ['label' => 'States / Provinces', 'model' => State::class, 'icon' => 'bi-map', 'unique_with_parent' => true, 'scoped_parent' => true, 'parent' => ['field' => 'country_id', 'label' => 'Country', 'model' => Country::class, 'default_code' => 'IN']],
+        'districts' => ['label' => 'Districts', 'model' => District::class, 'icon' => 'bi-geo-alt', 'unique_with_parent' => true, 'scoped_parent' => true, 'parent' => ['field' => 'state_id', 'label' => 'State / Province', 'model' => State::class, 'default_code' => 'PB', 'context' => 'country']],
         'languages' => ['label' => 'Languages', 'model' => Language::class, 'icon' => 'bi-translate'],
         'skills' => ['label' => 'Skills', 'model' => Skill::class, 'icon' => 'bi-tools'],
         'skill-groups' => ['label' => 'Skill Groups', 'model' => SkillGroup::class, 'icon' => 'bi-tags'],

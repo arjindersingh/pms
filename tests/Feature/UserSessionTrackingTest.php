@@ -82,6 +82,27 @@ class UserSessionTrackingTest extends TestCase
             ->assertOk()->assertSee('Session details')->assertSee('talent.dashboard')->assertSee('/talent/dashboard');
     }
 
+    public function test_active_now_counts_logged_in_users_instead_of_sessions(): void
+    {
+        $admin = User::query()->where('email', 'admin@example.com')->firstOrFail();
+        $talent = User::query()->where('email', 'talent@example.com')->firstOrFail();
+
+        foreach (['first-session', 'second-session'] as $sessionHash) {
+            UserSessionHistory::query()->create([
+                'user_id' => $talent->id,
+                'session_hash' => hash('sha256', $sessionHash),
+                'logged_in_at' => now()->subMinutes(5),
+                'last_seen_at' => now(),
+            ]);
+        }
+
+        $this->actingAs($admin)->get(route('admin.sessions.index'))
+            ->assertOk()
+            ->assertSeeInOrder(['>1</strong><small>Active now'], false)
+            ->assertSee('Demo Talent')
+            ->assertDontSee('Agency Recruiter');
+    }
+
     public function test_non_administrator_cannot_view_session_reports(): void
     {
         $talent = User::query()->where('email', 'talent@example.com')->firstOrFail();

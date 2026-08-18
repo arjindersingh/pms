@@ -20,7 +20,7 @@ return [
         ],
         'recruiter' => [
             'label' => 'Recruitment',
-            'eyebrow' => 'Talent acquisition workspace',
+            'eyebrow' => 'Recruiter',
             'accent' => '#e86f3d',
             'accent_rgb' => '232, 111, 61',
             'accent_dark' => '#be4f24',
@@ -31,7 +31,7 @@ return [
         ],
         'talent' => [
             'label' => 'Career space',
-            'eyebrow' => 'Your opportunity workspace',
+            'eyebrow' => 'Dashboard',
             'accent' => '#0f9f8f',
             'accent_rgb' => '15, 159, 143',
             'accent_dark' => '#08796d',

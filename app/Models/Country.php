@@ -2,4 +2,12 @@
 
 namespace App\Models;
 
-class Country extends SharedMaster {}
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Country extends SharedMaster
+{
+    public function states(): HasMany
+    {
+        return $this->hasMany(State::class);
+    }
+}

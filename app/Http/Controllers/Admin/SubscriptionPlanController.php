@@ -8,6 +8,7 @@ use App\Models\PortalMenu;
 use App\Models\PortalModule;
 use App\Models\SubscriptionPlan;
 use App\Models\User;
+use App\Support\Currency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,7 +25,7 @@ class SubscriptionPlanController extends Controller
 
     public function create(): View
     {
-        return view('admin.subscriptions.edit', ['plan' => new SubscriptionPlan(['currency' => 'USD', 'billing_period' => 'monthly', 'is_active' => true]), 'modules' => collect(), 'creating' => true]);
+        return view('admin.subscriptions.edit', ['plan' => new SubscriptionPlan(['currency' => Currency::DEFAULT, 'billing_period' => 'monthly', 'is_active' => true]), 'modules' => collect(), 'creating' => true]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -87,7 +88,7 @@ class SubscriptionPlanController extends Controller
 
     private function validated(Request $request, bool $withCategory): array
     {
-        $rules = ['name' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:1000'], 'price' => ['required', 'numeric', 'min:0'], 'currency' => ['required', 'string', 'size:3'], 'billing_period' => ['required', Rule::in(array_keys(SubscriptionPlan::BILLING_PERIODS))], 'position' => ['required', 'integer', 'min:0'], 'is_active' => ['boolean']];
+        $rules = ['name' => ['required', 'string', 'max:100'], 'description' => ['nullable', 'string', 'max:1000'], 'price' => ['required', 'numeric', 'min:0'], 'currency' => ['required', Rule::in(Currency::CODES)], 'billing_period' => ['required', Rule::in(array_keys(SubscriptionPlan::BILLING_PERIODS))], 'position' => ['required', 'integer', 'min:0'], 'is_active' => ['boolean']];
         if ($withCategory) {
             $rules['category'] = ['required', Rule::in([UserCategory::Recruiter->value, UserCategory::Talent->value])];
         }

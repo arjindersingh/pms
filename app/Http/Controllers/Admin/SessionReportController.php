@@ -21,12 +21,12 @@ class SessionReportController extends Controller
 
         return view('admin.sessions.index', [
             'sessions' => $query->latest('logged_in_at')->paginate(20)->withQueryString(),
-            'users' => User::query()->orderBy('name')->get(['id', 'name', 'email']),
+            'users' => User::query()->whereHas('sessionHistories')->orderBy('name')->get(['id', 'name', 'email']),
             'browsers' => UserSessionHistory::query()->whereNotNull('browser')->distinct()->orderBy('browser')->pluck('browser'),
             'systems' => UserSessionHistory::query()->whereNotNull('operating_system')->distinct()->orderBy('operating_system')->pluck('operating_system'),
             'summary' => [
                 'total' => (clone $summaryQuery)->count(),
-                'active' => (clone $summaryQuery)->whereNull('logged_out_at')->where('last_seen_at', '>=', $activeCutoff)->count(),
+                'active' => (clone $summaryQuery)->whereNull('logged_out_at')->where('last_seen_at', '>=', $activeCutoff)->distinct()->count('user_id'),
                 'users' => (clone $summaryQuery)->distinct()->count('user_id'),
                 'average_duration' => (int) ((clone $summaryQuery)->avg('duration_seconds') ?? 0),
                 'today' => (clone $summaryQuery)->whereDate('logged_in_at', today())->count(),

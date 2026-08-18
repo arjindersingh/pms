@@ -90,7 +90,7 @@ class CandidateProfileTest extends TestCase
 
         $this->assertDatabaseHas('portal_menus', [
             'slug' => 'candidate-profile',
-            'route_name' => 'talent.profile.edit',
+            'route_name' => null,
         ]);
     }
 
@@ -518,6 +518,35 @@ class CandidateProfileTest extends TestCase
             'portal_menu_id' => $menuId,
             'can_view' => true,
         ]);
+    }
+
+    public function test_candidate_profile_sections_are_separate_sidebar_pages(): void
+    {
+        $candidate = User::where('email', 'talent@example.com')->firstOrFail();
+
+        $dashboard = $this->actingAs($candidate)->get(route('talent.dashboard'))
+            ->assertOk()
+            ->assertDontSee('My Career')
+            ->assertSee('Candidate Profile')
+            ->assertSee('Personal')
+            ->assertSee('Photograph')
+            ->assertSee('Contact &amp; Address', false)
+            ->assertSee('Education')
+            ->assertSee(route('talent.profile.page.personal'), false)
+            ->assertSee(route('talent.profile.page.photograph'), false)
+            ->assertSee(route('talent.profile.page.contact'), false)
+            ->assertSee(route('talent.profile.page.education'), false)
+            ->assertSee(route('talent.job-preferences.edit'), false)
+            ->assertDontSee(route('talent.profile.page.preferences'), false);
+
+        $this->assertSame(1, substr_count($dashboard->getContent(), 'href="'.route('talent.job-preferences.edit').'"'));
+        $this->assertNull(DB::table('portal_menus')->where('slug', 'candidate-profile')->value('parent_id'));
+
+        foreach (['personal', 'photograph', 'contact', 'education'] as $section) {
+            $this->get(route('talent.profile.page.'.$section))
+                ->assertOk()
+                ->assertDontSee('class="profile-tabs"', false);
+        }
     }
 
     public function test_geography_and_form_masters_are_seeded_for_fresh_deployments(): void

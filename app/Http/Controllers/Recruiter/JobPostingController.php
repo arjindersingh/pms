@@ -7,6 +7,7 @@ use App\Models\JobPosting;
 use App\Models\OrganizationCategory;
 use App\Models\OrganizationPost;
 use App\Models\RecruiterOrganization;
+use App\Support\Currency;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -17,6 +18,7 @@ class JobPostingController extends Controller
     public function index(Request $request): View
     {
         $profile = $request->user()->recruiterProfile;
+
         return view('recruiter.job-postings.index', [
             'postings' => $profile?->jobPostings()->with('organization')->latest()->get() ?? collect(),
         ]);
@@ -32,12 +34,14 @@ class JobPostingController extends Controller
         $profile = $request->user()->recruiterProfile;
         abort_unless($profile, 422, 'Add an organisation before creating a job posting.');
         $profile->jobPostings()->create($this->validated($request, $profile->id));
+
         return redirect()->route('recruiter.job-postings.index')->with('status', 'Job posting created.');
     }
 
     public function edit(Request $request, JobPosting $jobPosting): View
     {
         $this->owns($request, $jobPosting);
+
         return $this->form($request, $jobPosting);
     }
 
@@ -45,6 +49,7 @@ class JobPostingController extends Controller
     {
         $this->owns($request, $jobPosting);
         $jobPosting->update($this->validated($request, $jobPosting->recruiter_profile_id));
+
         return redirect()->route('recruiter.job-postings.index')->with('status', 'Job posting updated.');
     }
 
@@ -52,12 +57,14 @@ class JobPostingController extends Controller
     {
         $this->owns($request, $jobPosting);
         $jobPosting->delete();
+
         return back()->with('status', 'Job posting removed.');
     }
 
     private function form(Request $request, JobPosting $jobPosting): View
     {
         $profile = $request->user()->recruiterProfile;
+
         return view('recruiter.job-postings.form', [
             'jobPosting' => $jobPosting,
             'organizations' => $profile?->organizations()->where('is_active', true)->get() ?? collect(),
@@ -74,7 +81,7 @@ class JobPostingController extends Controller
             'employment_type' => ['nullable', 'string', 'max:40'], 'work_mode' => ['nullable', 'string', 'max:40'],
             'location' => ['nullable', 'string', 'max:180'], 'vacancies' => ['required', 'integer', 'min:1', 'max:10000'],
             'salary_min' => ['nullable', 'numeric', 'min:0'], 'salary_max' => ['nullable', 'numeric', 'gte:salary_min'],
-            'currency' => ['required', 'string', 'size:3'], 'description' => ['required', 'string', 'max:10000'],
+            'currency' => ['required', Rule::in(Currency::CODES)], 'description' => ['required', 'string', 'max:10000'],
             'requirements' => ['nullable', 'string', 'max:10000'], 'application_deadline' => ['nullable', 'date'],
             'status' => ['required', Rule::in(['draft', 'published', 'closed'])],
         ]);
@@ -86,6 +93,7 @@ class JobPostingController extends Controller
         $data['title'] = $post?->display_name ?? $data['custom_title'];
         $data['published_at'] = $data['status'] === 'published' ? now() : null;
         unset($data['custom_title']);
+
         return $data;
     }
 
