@@ -87,11 +87,12 @@ class DatabaseSeeder extends Seeder
         ];
 
         $recruiterDashboard = $this->menu($recruitment, 'Dashboard', 'recruiter-dashboard', 'recruiter.dashboard', 'bi-speedometer2', 10);
+        $recruiterProfile = $this->menu($recruitment, 'Recruiter Profile', 'recruiter-profile', 'recruiter.profile.edit', 'bi-person-vcard', 15);
         $hiringWorkspace = $this->menu($recruitment, 'Hiring Workspace', 'hiring-workspace', null, 'bi-briefcase', 20);
         $jobs = $this->menu($recruitment, 'Jobs', 'jobs', null, 'bi-megaphone', 10, $hiringWorkspace);
         $candidates = $this->menu($recruitment, 'Candidates', 'candidates', null, 'bi-people', 20, $hiringWorkspace);
         $recruiterMenus = [
-            $recruiterDashboard, $hiringWorkspace, $jobs, $candidates,
+            $recruiterDashboard, $recruiterProfile, $hiringWorkspace, $jobs, $candidates,
             $this->menu($recruitment, 'Candidate Search', 'candidate-search', 'recruiter.candidate-search.edit', 'bi-person-bounding-box', 15, $hiringWorkspace),
             $this->menu($recruitment, 'All Job Postings', 'job-postings', null, 'bi-card-list', 10, $jobs),
             $this->menu($recruitment, 'Create a Job', 'create-job', null, 'bi-plus-square', 20, $jobs),
