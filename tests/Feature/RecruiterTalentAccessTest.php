@@ -75,14 +75,22 @@ class RecruiterTalentAccessTest extends TestCase
         $this->assertFalse($free->fresh()->hasFeature('talent_directory'));
     }
 
-    public function test_admin_can_move_receive_communications_to_free_talent_plan(): void
+    public function test_admin_can_manage_talent_services_independently(): void
     {
         $admin = User::where('email', 'admin@example.com')->firstOrFail();
         $free = SubscriptionPlan::where('category', 'talent')->where('slug', 'free')->firstOrFail();
-        $receive = PlanFeature::where('key', 'receive_recruiter_communications')->firstOrFail();
+        $messages = PlanFeature::where('key', 'receive_portal_messages')->firstOrFail();
+        $invitations = PlanFeature::where('key', 'receive_interview_invitations')->firstOrFail();
 
-        $this->actingAs($admin)->put(route('admin.subscription-plans.update', $free), ['name' => $free->name, 'description' => $free->description, 'price' => $free->price, 'currency' => $free->currency, 'billing_period' => $free->billing_period, 'position' => $free->position, 'is_active' => 1, 'features' => [$receive->id]])->assertRedirect();
+        $this->actingAs($admin)->get(route('admin.subscription-plans.edit', $free))
+            ->assertOk()
+            ->assertSee('Receive recruiter messages')
+            ->assertSee('Receive interview invitations');
 
-        $this->assertTrue($free->fresh()->hasFeature('receive_recruiter_communications'));
+        $this->actingAs($admin)->put(route('admin.subscription-plans.update', $free), ['name' => $free->name, 'description' => $free->description, 'price' => $free->price, 'currency' => $free->currency, 'billing_period' => $free->billing_period, 'position' => $free->position, 'is_active' => 1, 'features' => [$messages->id]])->assertRedirect();
+
+        $this->assertTrue($free->fresh()->hasFeature('receive_portal_messages'));
+        $this->assertFalse($free->fresh()->hasFeature('receive_interview_invitations'));
+        $this->assertNotSame($messages->id, $invitations->id);
     }
 }

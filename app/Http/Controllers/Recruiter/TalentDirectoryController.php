@@ -37,14 +37,15 @@ class TalentDirectoryController extends Controller
         abort_unless($candidateProfile->is_public, 404);
         abort_unless($request->user()->hasPlanFeature('full_profile'), 403, 'Upgrade your plan to open full talent profiles.');
         $candidateProfile->load(['user', 'skills', 'languages', 'educations', 'experiences', 'projects', 'talents']);
-        $candidateCanReceive = $candidateProfile->user->hasPlanFeature('receive_recruiter_communications');
+        $candidateCanReceiveMessages = $candidateProfile->user->hasPlanFeature('receive_portal_messages');
+        $candidateCanReceiveInvitations = $candidateProfile->user->hasPlanFeature('receive_interview_invitations');
 
         return view('recruiter.talent.show', [
             'profile' => $candidateProfile,
             'canViewContact' => $request->user()->hasPlanFeature('contact_details'),
-            'canMessage' => $candidateCanReceive && $request->user()->hasPlanFeature('portal_messages'),
-            'canInvite' => $candidateCanReceive && $request->user()->hasPlanFeature('interview_invitations'),
-            'candidateCanReceive' => $candidateCanReceive,
+            'canMessage' => $candidateCanReceiveMessages && $request->user()->hasPlanFeature('portal_messages'),
+            'canInvite' => $candidateCanReceiveInvitations && $request->user()->hasPlanFeature('interview_invitations'),
+            'candidateCanReceive' => $candidateCanReceiveMessages || $candidateCanReceiveInvitations,
         ]);
     }
 
@@ -59,8 +60,9 @@ class TalentDirectoryController extends Controller
             'meeting_location' => ['nullable', 'required_if:type,interview', 'string', 'max:255'],
         ]);
         $feature = $data['type'] === 'interview' ? 'interview_invitations' : 'portal_messages';
+        $candidateFeature = $data['type'] === 'interview' ? 'receive_interview_invitations' : 'receive_portal_messages';
         abort_unless($request->user()->hasPlanFeature($feature), 403, 'Your current plan does not include this service.');
-        abort_unless($candidateProfile->user->hasPlanFeature('receive_recruiter_communications'), 422, 'This candidate cannot receive recruiter communications on their current plan.');
+        abort_unless($candidateProfile->user->hasPlanFeature($candidateFeature), 422, 'This candidate cannot receive this communication type on their current plan.');
 
         RecruiterCandidateCommunication::create($data + [
             'recruiter_id' => $request->user()->id,

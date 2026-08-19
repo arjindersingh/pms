@@ -39,8 +39,14 @@
                                 @php
                                     $levelThreeMenus = $module->menus->where('parent_id', $levelTwo->id);
                                     $levelTwoAvailable = $levelTwo->route_name && Route::has($levelTwo->route_name);
+                                    $isSharedMasters = $portalArea === 'administrator' && $levelTwo->slug === 'shared-masters';
                                 @endphp
-                                @if($levelThreeMenus->isEmpty())
+                                @if($isSharedMasters)
+                                    <div class="sidebar-sublink sidebar-subheading"><span></span><span class="sidebar-label">{{ $levelTwo->name }}</span></div>
+                                    @foreach(\App\Support\SharedMasterRegistry::TYPES as $masterKey => $masterType)
+                                        <a class="sidebar-sublink sidebar-thirdlink {{ request()->routeIs('admin.shared-masters.index') && request()->query('type', 'qualification-levels') === $masterKey ? 'active' : '' }}" href="{{ route('admin.shared-masters.index', ['type' => $masterKey]) }}" title="{{ $masterType['label'] }}"><i class="bi {{ $masterType['icon'] }}"></i><span class="sidebar-label">{{ $masterType['label'] }}</span></a>
+                                    @endforeach
+                                @elseif($levelThreeMenus->isEmpty())
                                     <a class="sidebar-sublink {{ $levelTwoAvailable && request()->routeIs($levelTwo->route_name) ? 'active' : '' }} {{ $levelTwoAvailable ? '' : 'disabled' }}" href="{{ $levelTwoAvailable ? route($levelTwo->route_name) : '#' }}"><span></span><span class="sidebar-label">{{ $levelTwo->name }}</span></a>
                                 @else
                                     <div class="sidebar-sublink sidebar-subheading"><span></span><span class="sidebar-label">{{ $levelTwo->name }}</span></div>

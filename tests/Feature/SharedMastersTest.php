@@ -10,6 +10,7 @@ use App\Models\OrganizationPost;
 use App\Models\QualificationLevel;
 use App\Models\State;
 use App\Models\User;
+use App\Support\SharedMasterRegistry;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -118,6 +119,20 @@ class SharedMastersTest extends TestCase
 
         $this->actingAs($administrator)->delete(route('admin.shared-masters.destroy', ['qualification-levels', $record]))->assertRedirect();
         $this->assertSoftDeleted('qualification_levels', ['id' => $record->id]);
+    }
+
+    public function test_administrator_sidebar_lists_each_shared_master_type(): void
+    {
+        $administrator = User::where('email', 'admin@example.com')->firstOrFail();
+
+        $response = $this->actingAs($administrator)->get(route('admin.shared-masters.index', ['type' => 'organization-categories']));
+
+        $response->assertOk()->assertSee('class="master-add-row"', false);
+
+        foreach (SharedMasterRegistry::TYPES as $key => $type) {
+            $response->assertSee(route('admin.shared-masters.index', ['type' => $key]), false);
+            $response->assertSee($type['label']);
+        }
     }
 
     public function test_administrator_can_manage_organisation_categories_used_by_recruiters(): void
