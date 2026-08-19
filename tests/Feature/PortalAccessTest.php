@@ -302,14 +302,14 @@ class PortalAccessTest extends TestCase
         $this->actingAs($recruiter)->get(route('admin.access'))->assertForbidden();
     }
 
-    public function test_dashboard_top_bar_contains_theme_module_and_account_menus(): void
+    public function test_dashboard_top_bar_contains_theme_and_account_menus_without_module_launcher(): void
     {
         $user = User::query()->where('email', 'recruiter@example.com')->firstOrFail();
 
         $this->actingAs($user)->get(route('recruiter.dashboard'))
             ->assertOk()
             ->assertSee('Change theme')
-            ->assertSee('Your available workspaces')
+            ->assertDontSee('Your available workspaces')
             ->assertSee(route('account.profile'), false)
             ->assertSee(route('account.password'), false);
     }

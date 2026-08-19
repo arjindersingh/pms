@@ -29,7 +29,7 @@
                     <span class="plan-state {{ $activeSubscription?->subscription_plan_id === $plan->id ? '' : 'inactive' }}">{{ $activeSubscription?->subscription_plan_id === $plan->id ? 'Current plan' : 'Available' }}</span>
                     <h3>{{ $plan->name }}</h3><p>{{ $plan->description }}</p>
                     <strong>{{ $plan->currency }} {{ number_format((float)$plan->price, 2) }}<small>{{ (float)$plan->price > 0 ? '/ '.$plan->billingPeriodLabel() : ' · '.$plan->billingPeriodLabel() }}</small></strong>
-                    <ul class="small text-muted mt-3 ps-3">@foreach($plan->menus->take(6) as $menu)<li>{{ $menu->name }}</li>@endforeach</ul>
+                    <ul class="small text-muted mt-3 ps-3">@foreach(($plan->features->isNotEmpty() ? $plan->features : $plan->menus->take(6)) as $benefit)<li>{{ $benefit->name }}</li>@endforeach</ul>
                     <form method="POST" action="{{ route($renewRoute) }}" class="mt-auto pt-3">@csrf<input type="hidden" name="subscription_plan_id" value="{{ $plan->id }}">
                         @if((float)$plan->price > 0)
                             <label class="form-label" for="payment_method_{{ $plan->id }}">Payment method</label>

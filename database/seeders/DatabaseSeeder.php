@@ -97,6 +97,7 @@ class DatabaseSeeder extends Seeder
         $recruiterMenus = [
             $recruiterDashboard, $recruiterProfile, $recruiterBasic, $recruiterContact, $recruiterOrganizations, $hiringWorkspace, $jobs, $candidates,
             $this->menu($recruitment, 'Candidate Search', 'candidate-search', 'recruiter.candidate-search.edit', 'bi-person-bounding-box', 15, $hiringWorkspace),
+            $this->menu($recruitment, 'Available Talent', 'talent-directory', 'recruiter.talent.index', 'bi-people', 16, $hiringWorkspace),
             $this->menu($recruitment, 'All Job Postings', 'job-postings', 'recruiter.job-postings.index', 'bi-card-list', 10, $jobs),
             $this->menu($recruitment, 'Create a Job', 'create-job', 'recruiter.job-postings.create', 'bi-plus-square', 20, $jobs),
             $this->menu($recruitment, 'Applications', 'recruiter-applications', null, 'bi-inboxes', 10, $candidates),
@@ -415,8 +416,8 @@ class DatabaseSeeder extends Seeder
             $plan->menus()->sync(collect($menus)->mapWithKeys(function (PortalMenu $menu, int $index) use ($plan, $limit) {
                 $jobHierarchy = in_array($menu->slug, ['hiring-workspace', 'jobs', 'job-postings', 'create-job'], true);
                 $candidateProfileHierarchy = $menu->slug === 'candidate-profile' || str_starts_with($menu->slug, 'candidate-profile-');
-                $enabled = $jobHierarchy || $candidateProfileHierarchy || $index < $limit || ($plan->slug === 'free' && $menu->route_name !== null);
                 $essential = in_array($menu->slug, ['job-preferences', 'candidate-search'], true);
+                $enabled = $jobHierarchy || $candidateProfileHierarchy || $essential || $menu->slug === 'find-jobs' || $index < $limit || ($plan->slug === 'free' && $menu->route_name !== null);
                 $jobManagement = in_array($menu->slug, ['job-postings', 'create-job'], true);
 
                 return [$menu->id => ['can_view' => $enabled, 'can_create' => $jobManagement || ($enabled && ($plan->slug !== 'free' || $essential)), 'can_update' => $jobManagement || ($enabled && ($plan->slug !== 'free' || $essential)), 'can_delete' => $jobManagement || ($enabled && $plan->slug === 'full')]];

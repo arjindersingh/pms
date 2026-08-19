@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\UserCategory;
 use App\Http\Controllers\Controller;
+use App\Models\PlanFeature;
 use App\Models\PortalMenu;
 use App\Models\PortalModule;
 use App\Models\SubscriptionPlan;
@@ -25,7 +26,7 @@ class SubscriptionPlanController extends Controller
 
     public function create(): View
     {
-        return view('admin.subscriptions.edit', ['plan' => new SubscriptionPlan(['currency' => Currency::DEFAULT, 'billing_period' => 'monthly', 'is_active' => true]), 'modules' => collect(), 'creating' => true]);
+        return view('admin.subscriptions.edit', ['plan' => new SubscriptionPlan(['currency' => Currency::DEFAULT, 'billing_period' => 'monthly', 'is_active' => true]), 'modules' => collect(), 'features' => collect(), 'creating' => true]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -47,7 +48,7 @@ class SubscriptionPlanController extends Controller
         $moduleSlug = $subscriptionPlan->category === UserCategory::Recruiter ? 'recruitment' : 'career';
         $modules = PortalModule::where('slug', $moduleSlug)->with('menus')->get();
 
-        return view('admin.subscriptions.edit', ['plan' => $subscriptionPlan->load('menus'), 'modules' => $modules, 'creating' => false]);
+        return view('admin.subscriptions.edit', ['plan' => $subscriptionPlan->load(['menus', 'features']), 'modules' => $modules, 'features' => PlanFeature::where('category', $subscriptionPlan->category)->orderBy('position')->get(), 'creating' => false]);
     }
 
     public function update(Request $request, SubscriptionPlan $subscriptionPlan): RedirectResponse
@@ -60,6 +61,8 @@ class SubscriptionPlanController extends Controller
                 'can_view' => $request->boolean("menus.$id.view"), 'can_create' => $request->boolean("menus.$id.create"),
                 'can_update' => $request->boolean("menus.$id.update"), 'can_delete' => $request->boolean("menus.$id.delete"),
             ]])->all());
+            $featureIds = PlanFeature::query()->where('category', $subscriptionPlan->category)->whereIn('id', $request->input('features', []))->pluck('id');
+            $subscriptionPlan->features()->sync($featureIds);
         });
 
         return back()->with('status', 'Subscription plan and menu permissions saved.');

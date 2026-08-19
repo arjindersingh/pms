@@ -23,7 +23,7 @@ class SubscriptionController extends Controller
         $user = $request->user();
         $category = $user->userType->category;
         $activeSubscription = $user->activeSubscription()->with('plan')->first();
-        $plans = SubscriptionPlan::where('category', $category)->where('is_active', true)->with(['menus' => fn ($query) => $query->wherePivot('can_view', true)])->orderBy('position')->get();
+        $plans = SubscriptionPlan::where('category', $category)->where('is_active', true)->with(['features', 'menus' => fn ($query) => $query->wherePivot('can_view', true)])->orderBy('position')->get();
         $gateways = PaymentGateway::with(['methods' => fn ($query) => $query->where('is_enabled', true)])->where('is_enabled', true)->orderBy('position')->get();
 
         return view('talent.subscription.show', [

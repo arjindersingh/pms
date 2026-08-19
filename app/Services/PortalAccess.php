@@ -25,6 +25,15 @@ class PortalAccess
             return true;
         }
 
+        $individualAssignment = DB::table('portal_module_user')
+            ->where('portal_module_id', $module->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($individualAssignment) {
+            return (bool) $individualAssignment->enabled;
+        }
+
         if ($user->user_role_id) {
             $assignment = DB::table('portal_module_user_role')->where('portal_module_id', $module->id)->where('user_role_id', $user->user_role_id)->first();
 

@@ -17,6 +17,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Controllers\Recruiter\JobPostingController;
 use App\Http\Controllers\Recruiter\ProfileController as RecruiterProfileController;
+use App\Http\Controllers\Recruiter\TalentDirectoryController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\Talent\CandidateProfileController;
 use App\Http\Controllers\Talent\SubscriptionController as TalentSubscriptionController;
@@ -68,6 +69,8 @@ Route::middleware(['auth', 'category:administrator', 'module:administration'])->
     Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->middleware('menu:role-management,update')->name('roles.edit');
     Route::put('/roles/{role}', [RoleController::class, 'update'])->middleware('menu:role-management,update')->name('roles.update');
     Route::put('/accounts/{user}/role', [RoleController::class, 'assign'])->middleware('menu:role-management,update')->name('accounts.role');
+    Route::get('/accounts/{user}/permissions', [RoleController::class, 'editUserPermissions'])->middleware('menu:role-management,update')->name('accounts.permissions.edit');
+    Route::put('/accounts/{user}/permissions', [RoleController::class, 'updateUserPermissions'])->middleware('menu:role-management,update')->name('accounts.permissions.update');
     Route::get('/google-ads', [AdSettingController::class, 'edit'])->middleware('menu:google-ads,view')->name('ads.edit');
     Route::put('/google-ads', [AdSettingController::class, 'update'])->middleware('menu:google-ads,update')->name('ads.update');
     Route::get('/sessions', [SessionReportController::class, 'index'])->middleware('menu:session-reports,view')->name('sessions.index');
@@ -96,6 +99,9 @@ Route::middleware(['auth', 'category:recruiter', 'module:recruitment'])->prefix(
         ->middleware('menu:recruiter-dashboard,view')->name('dashboard');
     Route::get('/candidate-search', [JobSearchProfileController::class, 'recruiter'])->middleware('menu:candidate-search,view')->name('candidate-search.edit');
     Route::put('/candidate-search', [JobSearchProfileController::class, 'updateRecruiter'])->middleware('menu:candidate-search,update')->name('candidate-search.update');
+    Route::get('/talent', [TalentDirectoryController::class, 'index'])->name('talent.index');
+    Route::get('/talent/{candidateProfile}', [TalentDirectoryController::class, 'show'])->name('talent.show');
+    Route::post('/talent/{candidateProfile}/contact', [TalentDirectoryController::class, 'contact'])->name('talent.contact');
     Route::get('/profile', [RecruiterProfileController::class, 'organizations'])->name('profile.edit');
     Route::get('/profile/basic-detail', [RecruiterProfileController::class, 'basic'])->name('profile.basic');
     Route::put('/profile/basic-detail', [RecruiterProfileController::class, 'updateBasic'])->name('profile.basic.update');

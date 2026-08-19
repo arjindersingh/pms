@@ -45,6 +45,13 @@ class User extends Authenticatable
             ->latestOfMany('starts_at');
     }
 
+    public function hasPlanFeature(string $feature): bool
+    {
+        $subscription = $this->activeSubscription()->with('plan.features')->first();
+
+        return (bool) $subscription?->plan?->is_active && $subscription->plan->hasFeature($feature);
+    }
+
     public function jobSearchProfile(): HasOne
     {
         return $this->hasOne(JobSearchProfile::class);

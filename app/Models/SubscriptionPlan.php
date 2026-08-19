@@ -43,4 +43,16 @@ class SubscriptionPlan extends Model
     {
         return $this->hasMany(UserSubscription::class);
     }
+
+    public function features(): BelongsToMany
+    {
+        return $this->belongsToMany(PlanFeature::class, 'plan_feature_subscription_plan')->withTimestamps();
+    }
+
+    public function hasFeature(string $key): bool
+    {
+        return $this->relationLoaded('features')
+            ? $this->features->contains('key', $key)
+            : $this->features()->where('key', $key)->exists();
+    }
 }
